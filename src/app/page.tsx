@@ -42,7 +42,7 @@ export default function Home() {
   }, [bankAccounts]);
 
   const transactionsQuery = useMemoFirebase(
-    () => bankAccount ? collection(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id, 'transactions') : null,
+    () => (user && bankAccount) ? collection(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id, 'transactions') : null,
     [firestore, user, bankAccount]
   );
   const { data: transactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
