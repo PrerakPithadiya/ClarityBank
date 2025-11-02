@@ -1,5 +1,44 @@
 
-export type TransactionCategory = "Food" | "Shopping" | "Transport" | "Bills" | "Entertainment" | "Other";
+
+export type TransactionCategory = 
+  // Daily Expenses
+  "Food" | 
+  "Groceries" | 
+  "Transport" | 
+  "Bills" |
+  "Rent" |
+  "Utilities" |
+  // Lifestyle
+  "Shopping" | 
+  "Entertainment" | 
+  "Dining Out" |
+  "Personal Care" |
+  "Gifts & Celebrations" |
+  "Health & Fitness" |
+  "Subscriptions" |
+  "Travel" |
+  "Fuel" |
+  // Finance
+  "Salary / Income" |
+  "Investments" |
+  "Loan Payments" |
+  "Insurance" |
+  "Business Expenses" |
+  "Donations / Charity" |
+  "Taxes" |
+  // Savings
+  "Savings" |
+  "Emergency Fund" |
+  "Credit Card Payment" |
+  "EMI / Installments" |
+  // Miscellaneous
+  "Kids / Family Expenses" |
+  "Online Services" |
+  "Maintenance / Repairs" |
+  "Pets" |
+  "Other" |
+  "Miscellaneous";
+
 
 export interface Transaction {
   id: string;
