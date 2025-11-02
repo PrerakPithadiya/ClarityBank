@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import { format, subDays } from 'date-fns';
+import { format, subDays, fromUnixTime } from 'date-fns';
 import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,20 +10,32 @@ import type { Transaction } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+import { Skeleton } from '../ui/skeleton';
 
 type TransactionHistoryProps = {
   transactions: Transaction[];
+  isLoading: boolean;
 };
 
-export function TransactionHistory({ transactions }: TransactionHistoryProps) {
+// Helper to convert Firestore Timestamp to Date
+const toDate = (timestamp: any): Date => {
+  if (timestamp && typeof timestamp.seconds === 'number') {
+    return fromUnixTime(timestamp.seconds);
+  }
+  // Fallback for cases where it might already be a Date object or string
+  return new Date(timestamp);
+};
+
+
+export function TransactionHistory({ transactions, isLoading }: TransactionHistoryProps) {
   const [filterType, setFilterType] = useState<'all' | 'deposit' | 'withdrawal'>('all');
   const [filterPeriod, setFilterPeriod] = useState<'all' | '7' | '30' | '90'>('all');
   
   const filteredTransactions = useMemo(() => {
-    let items = transactions;
+    let items = transactions.map(t => ({...t, date: toDate(t.transactionDate)}));
 
     if (filterType !== 'all') {
-      items = items.filter(t => t.type === filterType);
+      items = items.filter(t => t.transactionType === filterType);
     }
     
     if (filterPeriod !== 'all') {
@@ -32,7 +44,7 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
       items = items.filter(t => t.date >= cutoffDate);
     }
     
-    return items;
+    return items.sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [transactions, filterType, filterPeriod]);
 
   return (
@@ -80,7 +92,16 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTransactions.length > 0 ? (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
+                    <TableCell className="text-center"><Skeleton className="h-5 w-20 mx-auto" /></TableCell>
+                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredTransactions.length > 0 ? (
                 filteredTransactions.map((transaction) => (
                   <TableRow key={transaction.id} className="transition-colors">
                     <TableCell>
@@ -88,23 +109,23 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
                       <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy')}</div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant={transaction.type === 'deposit' ? 'default' : 'secondary'} className={cn(
+                      <Badge variant={transaction.transactionType === 'deposit' ? 'default' : 'secondary'} className={cn(
                         'w-fit',
-                         transaction.type === 'deposit' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                         transaction.transactionType === 'deposit' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
                       )}>
-                        {transaction.type === 'deposit' ? 
+                        {transaction.transactionType === 'deposit' ? 
                           <ArrowUpCircle className="mr-1 h-4 w-4" /> : 
                           <ArrowDownCircle className="mr-1 h-4 w-4" />
                         }
-                        {transaction.type}
+                        {transaction.transactionType}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{format(transaction.date, 'MMM d, yyyy')}</TableCell>
                     <TableCell className={cn(
                       'text-right font-medium',
-                      transaction.type === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                      transaction.transactionType === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                     )}>
-                      {transaction.type === 'deposit' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                      {transaction.transactionType === 'deposit' ? '+' : '-'}${transaction.amount.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))
