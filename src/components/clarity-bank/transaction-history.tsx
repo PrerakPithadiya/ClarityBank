@@ -51,7 +51,7 @@ const handleDownloadReceipt = (transaction: Transaction) => {
   let y = 60;
   const leftMargin = 20;
   const rightMargin = 80;
-  const lineSpacing = 7;
+  const lineSpacing = 8;
 
   doc.setFont('helvetica', 'normal');
   doc.text('Transaction ID:', leftMargin, y);
@@ -70,7 +70,7 @@ const handleDownloadReceipt = (transaction: Transaction) => {
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('Amount:', leftMargin, y);
-  doc.text(`${transaction.type === 'deposit' ? '+' : '-'} ₹${transaction.amount?.toFixed(2) || '0.00'}`, rightMargin, y);
+  doc.text(`${transaction.type === 'deposit' ? '+' : '-'} INR ${transaction.amount?.toFixed(2) || '0.00'}`, rightMargin, y);
   y += lineSpacing * 1.5;
 
   // Other details
@@ -244,3 +244,4 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
     </Card>
   );
 }
+
