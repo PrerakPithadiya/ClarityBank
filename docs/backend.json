@@ -1,0 +1,172 @@
+{
+  "entities": {
+    "BankAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BankAccount",
+      "type": "object",
+      "description": "Represents a bank account.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the bank account."
+        },
+        "accountNumber": {
+          "type": "string",
+          "description": "The account number for the bank account."
+        },
+        "balance": {
+          "type": "number",
+          "description": "The current balance of the bank account."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N BankAccount)"
+        }
+      },
+      "required": [
+        "id",
+        "accountNumber",
+        "balance",
+        "userId"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a transaction performed on a bank account.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction."
+        },
+        "bankAccountId": {
+          "type": "string",
+          "description": "Reference to BankAccount. (Relationship: BankAccount 1:N Transaction)"
+        },
+        "transactionType": {
+          "type": "string",
+          "description": "The type of transaction (e.g., deposit, withdrawal)."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the transaction."
+        },
+        "transactionDate": {
+          "type": "string",
+          "description": "The date and time of the transaction.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "bankAccountId",
+        "transactionType",
+        "amount",
+        "transactionDate"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the banking application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles.  Uses path-based ownership for simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bankAccounts/{bankAccountId}",
+        "definition": {
+          "entityName": "BankAccount",
+          "schema": {
+            "$ref": "#/backend/entities/BankAccount"
+          },
+          "description": "Stores bank account information for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "bankAccountId",
+              "description": "The unique identifier of the bank account."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bankAccounts/{bankAccountId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores transaction history for each bank account. Includes denormalized 'bankAccountId' and 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "bankAccountId",
+              "description": "The unique identifier of the bank account."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier of the transaction."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to provide a secure and scalable banking application, ClarityBank. Prioritizing Authorization Independence, the structure avoids hierarchical `get()` calls in security rules, crucial for atomic operations and debuggability. It uses path-based ownership and explicit state modeling to maintain data clarity and integrity.\n\n1.  **Users (Private Data):** User data is stored under `/users/{userId}`, enabling path-based ownership and simplified security rules. This adheres to the principle of Private Data storage.\n\n2.  **Bank Accounts (User 1:N BankAccount):** Each user's bank accounts are stored in a subcollection `/users/{userId}/bankAccounts/{bankAccountId}`. The `userId` field within each bank account document is redundant but critical.  It denormalizes the user-account relationship, eliminating the need for `get()` calls to the `/users/{userId}` document in security rules. This is necessary to ensure Authorization Independence.  This structure uses hierarchical paths for user-owned data.\n\n3.  **Transactions (BankAccount 1:N Transaction):** Transactions are stored in a subcollection `/users/{userId}/bankAccounts/{bankAccountId}/transactions/{transactionId}`. The `bankAccountId` and `userId` are denormalized within each transaction document.  This design continues the hierarchy for nested data and maintains Authorization Independence, avoiding dependency on parent documents in security rules.\n\nThis design achieves Authorization Independence by denormalizing authorization context, specifically the `userId` in `bankAccounts` and both `bankAccountId` and `userId` in `transactions`. This eliminates the need for `get()` calls in security rules, allowing for atomic operations.\n\nTo support QAPs (Rules are not Filters), the design uses structural segregation. Each collection (`/users`, `/users/{userId}/bankAccounts`, `/users/{userId}/bankAccounts/{bankAccountId}/transactions`) has homogeneous security needs, simplifying security rules and preventing the need to filter data based on access rights. The path-based ownership model makes `list` operations secure, as rules can easily restrict access to only the data owned by the authenticated user."
+  }
+}
