@@ -36,6 +36,7 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
       const preparedTransactions: TransactionForAI[] = transactions
         .map(t => {
           const date = toDate(t.timestamp);
+          // Ensure we only pass the fields defined in TransactionForAI
           return date ? {
             type: t.type,
             amount: t.amount,
