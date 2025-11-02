@@ -44,18 +44,21 @@ export function Header() {
         {user && !isUserLoading && (
           <>
             <nav className="hidden sm:flex items-center gap-2">
-                <Button asChild variant={pathname === '/' ? 'secondary' : 'ghost'}>
-                    <Link href="/">
-                        <Home className="mr-2 h-4 w-4" />
-                        Home
-                    </Link>
+              {pathname === '/dashboard' ? (
+                <Button asChild variant='ghost'>
+                  <Link href="/">
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                  </Link>
                 </Button>
-                <Button asChild variant={pathname === '/dashboard' ? 'secondary' : 'ghost'}>
-                    <Link href="/dashboard">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Dashboard
-                    </Link>
+              ) : (
+                <Button asChild variant='ghost'>
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Link>
                 </Button>
+              )}
             </nav>
             <div className="flex items-center gap-3 text-right pl-2">
               <div>
