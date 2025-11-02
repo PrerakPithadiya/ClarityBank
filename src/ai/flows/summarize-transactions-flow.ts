@@ -8,48 +8,39 @@ import { fromUnixTime, format } from 'date-fns';
 
 const toDate = (timestamp: any): Date | null => {
   if (!timestamp) return null;
+  // Handle Firestore Timestamp object which might not be a Date object on the server
   if (timestamp && typeof timestamp.seconds === 'number') {
     return fromUnixTime(timestamp.seconds);
   }
+  // Handle ISO string or other date formats
   const d = new Date(timestamp);
   return d;
 };
+
 
 const TransactionSchemaForAI = z.object({
   type: z.enum(['deposit', 'withdrawal']),
   amount: z.number(),
   category: z.string(),
-  // We simplify the timestamp to a string for the AI model
+  // The AI model will receive a simple date string
   date: z.string().describe("The date of the transaction in 'yyyy-MM-dd' format."),
 });
 
-type TransactionForAI = z.infer<typeof TransactionSchemaForAI>;
-
+// The input for the flow is an array of these simplified transaction objects
 const SummarizeTransactionsInputSchema = z.array(TransactionSchemaForAI);
+
+export type TransactionForAI = z.infer<typeof TransactionSchemaForAI>;
 
 const SummarizeTransactionsOutputSchema = z.object({
   summary: z.string().describe('A concise, 2-3 sentence summary of the user\'s financial activity.'),
 });
 
-export async function summarizeTransactions(transactions: Transaction[]): Promise<z.infer<typeof SummarizeTransactionsOutputSchema>> {
-  // Preprocess the data to be more AI-friendly
-  const preparedTransactions: TransactionForAI[] = transactions
-    .map(t => {
-      const date = toDate(t.timestamp);
-      return date ? {
-        type: t.type,
-        amount: t.amount,
-        category: t.category,
-        date: format(date, 'yyyy-MM-dd'),
-      } : null;
-    })
-    .filter((t): t is TransactionForAI => t !== null);
-  
-  if (preparedTransactions.length === 0) {
+export async function summarizeTransactions(transactions: TransactionForAI[]): Promise<z.infer<typeof SummarizeTransactionsOutputSchema>> {
+  if (transactions.length === 0) {
     return { summary: "There are no transactions available to analyze." };
   }
 
-  return summarizeTransactionsFlow(preparedTransactions);
+  return summarizeTransactionsFlow(transactions);
 }
 
 const prompt = ai.definePrompt({

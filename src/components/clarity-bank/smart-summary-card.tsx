@@ -5,13 +5,24 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Transaction } from '@/lib/types';
-import { summarizeTransactions } from '@/ai/flows/summarize-transactions-flow';
+import { summarizeTransactions, type TransactionForAI } from '@/ai/flows/summarize-transactions-flow';
 import { Lightbulb } from 'lucide-react';
+import { format, fromUnixTime } from 'date-fns';
 
 interface SmartSummaryCardProps {
   transactions: Transaction[];
   isLoading: boolean;
 }
+
+const toDate = (timestamp: any): Date | null => {
+  if (!timestamp) return null;
+  if (timestamp && typeof timestamp.seconds === 'number') {
+    return fromUnixTime(timestamp.seconds);
+  }
+  const d = new Date(timestamp);
+  return d;
+};
+
 
 export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardProps) {
   const [summary, setSummary] = useState<string | null>(null);
@@ -20,7 +31,21 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
   useEffect(() => {
     if (transactions && transactions.length > 0 && !isLoading) {
       setAiLoading(true);
-      summarizeTransactions(transactions)
+
+      // Preprocess the data to be serializable before sending to the server action
+      const preparedTransactions: TransactionForAI[] = transactions
+        .map(t => {
+          const date = toDate(t.timestamp);
+          return date ? {
+            type: t.type,
+            amount: t.amount,
+            category: t.category,
+            date: format(date, 'yyyy-MM-dd'),
+          } : null;
+        })
+        .filter((t): t is TransactionForAI => t !== null);
+
+      summarizeTransactions(preparedTransactions)
         .then(result => setSummary(result.summary))
         .catch(err => {
             console.error("AI summary failed:", err);
