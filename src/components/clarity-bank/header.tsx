@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ClarityBankLogo } from './clarity-bank-logo';
 import { Button } from '../ui/button';
-import { LayoutDashboard, LogOut } from 'lucide-react';
+import { LayoutDashboard, LogOut, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -44,6 +44,12 @@ export function Header() {
         {user && !isUserLoading && (
           <>
             <nav className="hidden sm:flex items-center gap-2">
+                <Button asChild variant={pathname === '/' ? 'secondary' : 'ghost'}>
+                    <Link href="/">
+                        <Home className="mr-2 h-4 w-4" />
+                        Home
+                    </Link>
+                </Button>
                 <Button asChild variant={pathname === '/dashboard' ? 'secondary' : 'ghost'}>
                     <Link href="/dashboard">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
