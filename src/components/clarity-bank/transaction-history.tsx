@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
+import { getCategoryInfo } from '@/lib/transaction-categories';
 
 type TransactionHistoryProps = {
   transactions: Transaction[];
@@ -49,6 +50,20 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
     
     return items.sort((a, b) => b.date!.getTime() - a.date!.getTime());
   }, [transactions, filterType, filterPeriod]);
+
+  const renderCategory = (categoryValue: Transaction['category']) => {
+    const categoryInfo = getCategoryInfo(categoryValue);
+    if (!categoryInfo) {
+      return <Badge variant="outline">{categoryValue}</Badge>;
+    }
+    const Icon = categoryInfo.icon;
+    return (
+      <Badge variant="outline" className="flex items-center gap-1.5">
+        <Icon className="h-3.5 w-3.5" />
+        {categoryInfo.label}
+      </Badge>
+    );
+  };
 
   return (
     <Card className="shadow-lg">
@@ -114,7 +129,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                       {transaction.date && <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy, h:mm a')}</div>}
                     </TableCell>
                      <TableCell className="text-center hidden sm:table-cell">
-                      <Badge variant="outline">{transaction.category}</Badge>
+                      {renderCategory(transaction.category)}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant={transaction.type === 'deposit' ? 'default' : 'secondary'} className={cn(

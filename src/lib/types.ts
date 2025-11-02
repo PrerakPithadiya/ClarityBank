@@ -1,5 +1,7 @@
 
 
+import type { LucideIcon } from 'lucide-react';
+
 export type TransactionCategory = 
   // Daily Expenses
   "Food" | 
@@ -69,4 +71,15 @@ export interface User {
     email: string;
     createdAt: any;
     updatedAt: any;
+}
+
+export interface CategoryInfo {
+  value: TransactionCategory;
+  label: string;
+  icon: LucideIcon;
+}
+
+export interface CategoryGroup {
+  label: string;
+  categories: CategoryInfo[];
 }

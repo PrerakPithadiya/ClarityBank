@@ -15,6 +15,8 @@ import { z } from "zod";
 import React from "react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TransactionCategory } from "@/lib/types";
+import { TRANSACTION_CATEGORIES, ALL_CATEGORIES } from "@/lib/transaction-categories";
+
 
 type ActionsCardProps = {
   balance: number;
@@ -22,41 +24,18 @@ type ActionsCardProps = {
   onWithdraw: (amount: number, description: string, category: TransactionCategory) => Promise<void>;
 };
 
-const transactionCategoryGroups = [
-    {
-        label: "Daily Expenses",
-        categories: ["Food", "Groceries", "Transport", "Bills", "Rent", "Utilities"]
-    },
-    {
-        label: "Lifestyle",
-        categories: ["Shopping", "Entertainment", "Dining Out", "Personal Care", "Gifts & Celebrations", "Health & Fitness", "Subscriptions", "Travel", "Fuel"]
-    },
-    {
-        label: "Finance",
-        categories: ["Salary / Income", "Investments", "Loan Payments", "Insurance", "Business Expenses", "Donations / Charity", "Taxes"]
-    },
-    {
-        label: "Savings",
-        categories: ["Savings", "Emergency Fund", "Credit Card Payment", "EMI / Installments"]
-    },
-    {
-        label: "Miscellaneous",
-        categories: ["Kids / Family Expenses", "Online Services", "Maintenance / Repairs", "Pets", "Other", "Miscellaneous"]
-    }
-];
-
-const allCategories = transactionCategoryGroups.flatMap(group => group.categories) as [TransactionCategory, ...TransactionCategory[]];
+const allCategoryValues = ALL_CATEGORIES.map(c => c.value) as [TransactionCategory, ...TransactionCategory[]];
 
 const DepositFormSchema = z.object({
   amount: z.coerce.number().positive({ message: "Amount must be greater than zero." }).max(1000000, { message: "Deposit cannot exceed ₹1,000,000." }),
   description: z.string().min(1, "Description is required.").max(50, "Description is too long."),
-  category: z.enum(allCategories),
+  category: z.enum(allCategoryValues),
 });
 
 const WithdrawFormSchema = (balance: number) => z.object({
   amount: z.coerce.number().positive({ message: "Amount must be greater than zero." }).max(balance, { message: "Insufficient funds." }),
   description: z.string().min(1, "Description is required.").max(50, "Description is too long."),
-  category: z.enum(allCategories),
+  category: z.enum(allCategoryValues),
 });
 
 
@@ -156,11 +135,16 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {transactionCategoryGroups.map(group => (
+                          {TRANSACTION_CATEGORIES.map(group => (
                             <SelectGroup key={group.label}>
                               <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group.label}</p>
                               {group.categories.map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  <div className="flex items-center gap-2">
+                                    <cat.icon className="h-4 w-4 text-muted-foreground" />
+                                    <span>{cat.label}</span>
+                                  </div>
+                                </SelectItem>
                               ))}
                             </SelectGroup>
                           ))}
@@ -223,11 +207,16 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {transactionCategoryGroups.map(group => (
+                          {TRANSACTION_CATEGORIES.map(group => (
                             <SelectGroup key={group.label}>
                               <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group.label}</p>
                               {group.categories.map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  <div className="flex items-center gap-2">
+                                    <cat.icon className="h-4 w-4 text-muted-foreground" />
+                                    <span>{cat.label}</span>
+                                  </div>
+                                </SelectItem>
                               ))}
                             </SelectGroup>
                           ))}
