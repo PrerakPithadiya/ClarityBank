@@ -2,20 +2,7 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import type { Transaction } from '@/lib/types';
 import { z } from 'zod';
-import { fromUnixTime, format } from 'date-fns';
-
-const toDate = (timestamp: any): Date | null => {
-  if (!timestamp) return null;
-  // Handle Firestore Timestamp object which might not be a Date object on the server
-  if (timestamp && typeof timestamp.seconds === 'number') {
-    return fromUnixTime(timestamp.seconds);
-  }
-  // Handle ISO string or other date formats
-  const d = new Date(timestamp);
-  return d;
-};
 
 
 const TransactionSchemaForAI = z.object({
@@ -36,7 +23,7 @@ const SummarizeTransactionsOutputSchema = z.object({
 });
 
 export async function summarizeTransactions(transactions: TransactionForAI[]): Promise<z.infer<typeof SummarizeTransactionsOutputSchema>> {
-  if (transactions.length === 0) {
+  if (!transactions || transactions.length === 0) {
     return { summary: "There are no transactions available to analyze." };
   }
 

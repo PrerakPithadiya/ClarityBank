@@ -16,11 +16,13 @@ interface SmartSummaryCardProps {
 
 const toDate = (timestamp: any): Date | null => {
   if (!timestamp) return null;
+  // Handle Firestore Timestamp object
   if (timestamp && typeof timestamp.seconds === 'number') {
     return fromUnixTime(timestamp.seconds);
   }
+  // Handle existing Date objects or ISO strings
   const d = new Date(timestamp);
-  return d;
+  return isNaN(d.getTime()) ? null : d;
 };
 
 
@@ -32,27 +34,36 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
     if (transactions && transactions.length > 0 && !isLoading) {
       setAiLoading(true);
 
-      // Preprocess the data to be serializable before sending to the server action
+      // Preprocess the data to be serializable before sending to the server action.
+      // Explicitly create plain objects to ensure no complex types are passed.
       const preparedTransactions: TransactionForAI[] = transactions
         .map(t => {
           const date = toDate(t.timestamp);
-          // Ensure we only pass the fields defined in TransactionForAI
-          return date ? {
+          if (!date) {
+            return null; // Skip transactions with invalid dates
+          }
+          // Create a new, plain object with only the required fields.
+          return {
             type: t.type,
             amount: t.amount,
             category: t.category,
             date: format(date, 'yyyy-MM-dd'),
-          } : null;
+          };
         })
         .filter((t): t is TransactionForAI => t !== null);
 
-      summarizeTransactions(preparedTransactions)
-        .then(result => setSummary(result.summary))
-        .catch(err => {
-            console.error("AI summary failed:", err);
-            setSummary("Could not generate insights at this time.");
-        })
-        .finally(() => setAiLoading(false));
+      if (preparedTransactions.length > 0) {
+        summarizeTransactions(preparedTransactions)
+          .then(result => setSummary(result.summary))
+          .catch(err => {
+              console.error("AI summary failed:", err);
+              setSummary("Could not generate insights at this time.");
+          })
+          .finally(() => setAiLoading(false));
+      } else {
+        setAiLoading(false);
+        setSummary("No recent transactions to analyze.");
+      }
     }
   }, [transactions, isLoading]);
 
