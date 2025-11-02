@@ -109,7 +109,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                   <TableRow key={transaction.id} className="transition-colors animate-in fade-in-0">
                     <TableCell>
                       <div className="font-medium">{transaction.description}</div>
-                      {transaction.date && <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy')}</div>}
+                      {transaction.date && <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy, h:mm a')}</div>}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant={transaction.type === 'deposit' ? 'default' : 'secondary'} className={cn(
@@ -123,7 +123,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                         {transaction.type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{transaction.date && format(transaction.date, 'MMM d, yyyy')}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{transaction.date && format(transaction.date, 'MMM d, yyyy, h:mm a')}</TableCell>
                     <TableCell className={cn(
                       'text-right font-medium',
                       transaction.type === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
