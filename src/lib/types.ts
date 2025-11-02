@@ -3,8 +3,8 @@ export interface Transaction {
   bankAccountId: string;
   transactionType: 'deposit' | 'withdrawal';
   amount: number;
-  description?: string;
-  transactionDate: string; // Changed to string to match Firestore server timestamp
+  description: string;
+  transactionDate: any; 
 }
 
 export interface BankAccount {

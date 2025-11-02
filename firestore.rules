@@ -25,6 +25,8 @@
  *   `bankAccounts` and both `bankAccountId` and `userId` in `transactions`.
  *   This eliminates the need for `get()` calls in security rules, allowing
  *   for atomic operations.
+ * - Balance updates are validated to prevent withdrawals that would result in
+ *   a negative balance.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -85,13 +87,38 @@ service cloud.firestore {
       }
 
       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+        return isOwner(userId) && exists(path);
+      }
+
+      // Validates that the incoming balance is a number.
+      function isBalanceValid() {
+        return request.resource.data.balance is number;
+      }
+
+      // Validates a withdrawal request.
+      function isValidWithdrawal(currentBalance, newBalance) {
+        // Ensure new balance is not negative and is less than the current balance.
+        let isNotNegative = newBalance >= 0;
+        let isDecreasing = newBalance < currentBalance;
+        return isNotNegative && isDecreasing;
+      }
+      
+      // Validates a deposit request.
+      function isValidDeposit(currentBalance, newBalance) {
+          // Ensure new balance is greater than the current balance.
+          return newBalance > currentBalance;
       }
 
       allow get: if isSignedIn() && isOwner(userId);
       allow list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow update: if isSignedIn() &&
+                       isExistingOwner(userId) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       isBalanceValid() &&
+                       (isValidDeposit(resource.data.balance, request.resource.data.balance) || 
+                        isValidWithdrawal(resource.data.balance, request.resource.data.balance));
+
       allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
@@ -123,9 +150,13 @@ service cloud.firestore {
 
       allow get: if isSignedIn() && isOwner(userId);
       allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.bankAccountId == bankAccountId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.bankAccountId == resource.data.bankAccountId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      // Transactions are immutable once created.
+      allow create: if isSignedIn() && 
+                       isOwner(userId) && 
+                       request.resource.data.bankAccountId == bankAccountId &&
+                       request.resource.data.amount > 0; // Amount must be positive
+      allow update: if false; 
+      allow delete: if false;
     }
   }
 }

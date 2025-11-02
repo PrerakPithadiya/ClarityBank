@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, runTransaction, Transaction as FirestoreTransaction } from 'firebase/firestore';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Header } from '@/components/clarity-bank/header';
 import { BalanceCard } from '@/components/clarity-bank/balance-card';
@@ -13,11 +13,13 @@ import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import banksData from '@/lib/banks.json';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const [bankAccount, setBankAccount] = useState<BankAccount | null>(null);
 
@@ -35,11 +37,12 @@ export default function Home() {
 
   useEffect(() => {
     if (bankAccounts && bankAccounts.length > 0) {
-      setBankAccount(bankAccounts[0]);
+      const currentAccount = bankAccounts.find(acc => acc.id === bankAccount?.id) || bankAccounts[0];
+      setBankAccount(currentAccount);
     } else if (bankAccounts && bankAccounts.length === 0) {
       setBankAccount(null);
     }
-  }, [bankAccounts]);
+  }, [bankAccounts, bankAccount?.id]);
 
   const transactionsQuery = useMemoFirebase(
     () => (user && bankAccount) ? collection(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id, 'transactions') : null,
@@ -47,44 +50,89 @@ export default function Home() {
   );
   const { data: transactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
 
-  const handleDeposit = (amount: number, description: string) => {
+  const handleDeposit = async (amount: number, description: string) => {
     if (!user || !bankAccount) return;
-
-    const batch = writeBatch(firestore);
+  
     const bankAccountRef = doc(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id);
-    batch.update(bankAccountRef, { balance: bankAccount.balance + amount });
-
-    const transactionRef = doc(collection(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id, 'transactions'));
-    batch.set(transactionRef, {
-      id: transactionRef.id,
-      bankAccountId: bankAccount.id,
-      transactionType: 'deposit',
-      amount,
-      description,
-      transactionDate: serverTimestamp(),
-    });
-
-    batch.commit();
+    const transactionCollectionRef = collection(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id, 'transactions');
+  
+    try {
+      await runTransaction(firestore, async (transaction: FirestoreTransaction) => {
+        const accountDoc = await transaction.get(bankAccountRef);
+        if (!accountDoc.exists()) {
+          throw "Bank account does not exist!";
+        }
+  
+        const newBalance = accountDoc.data().balance + amount;
+        transaction.update(bankAccountRef, { balance: newBalance });
+  
+        const newTransactionRef = doc(transactionCollectionRef);
+        transaction.set(newTransactionRef, {
+          id: newTransactionRef.id,
+          bankAccountId: bankAccount.id,
+          transactionType: 'deposit',
+          amount,
+          description,
+          transactionDate: serverTimestamp(),
+        });
+      });
+      toast({
+        title: "Deposit Successful",
+        description: `You have deposited ₹${amount.toFixed(2)}.`,
+      });
+    } catch (error) {
+      console.error("Deposit failed: ", error);
+      toast({
+        title: "Deposit Failed",
+        description: "An error occurred during the deposit. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleWithdrawal = (amount: number, description: string) => {
+  const handleWithdrawal = async (amount: number, description: string) => {
     if (!user || !bankAccount) return;
-
-    const batch = writeBatch(firestore);
+  
     const bankAccountRef = doc(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id);
-    batch.update(bankAccountRef, { balance: bankAccount.balance - amount });
-
-    const transactionRef = doc(collection(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id, 'transactions'));
-    batch.set(transactionRef, {
-      id: transactionRef.id,
-      bankAccountId: bankAccount.id,
-      transactionType: 'withdrawal',
-      amount,
-      description,
-      transactionDate: serverTimestamp(),
-    });
-    
-    batch.commit();
+    const transactionCollectionRef = collection(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id, 'transactions');
+  
+    try {
+      await runTransaction(firestore, async (transaction: FirestoreTransaction) => {
+        const accountDoc = await transaction.get(bankAccountRef);
+        if (!accountDoc.exists()) {
+          throw "Bank account does not exist!";
+        }
+  
+        const currentBalance = accountDoc.data().balance;
+        if (currentBalance < amount) {
+          throw "Insufficient funds.";
+        }
+  
+        const newBalance = currentBalance - amount;
+        transaction.update(bankAccountRef, { balance: newBalance });
+  
+        const newTransactionRef = doc(transactionCollectionRef);
+        transaction.set(newTransactionRef, {
+          id: newTransactionRef.id,
+          bankAccountId: bankAccount.id,
+          transactionType: 'withdrawal',
+          amount,
+          description,
+          transactionDate: serverTimestamp(),
+        });
+      });
+      toast({
+        title: "Withdrawal Successful",
+        description: `You have withdrawn ₹${amount.toFixed(2)}.`,
+      });
+    } catch (error) {
+      console.error("Withdrawal failed: ", error);
+      toast({
+        title: "Withdrawal Failed",
+        description: typeof error === 'string' ? error : "An error occurred during withdrawal.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCreateAccount = async (accountNumber: string, bankId: string) => {
@@ -94,7 +142,7 @@ export default function Home() {
 
     const newAccount: Omit<BankAccount, 'id'> = {
       accountNumber,
-      balance: 0,
+      balance: 1000, // Start with some initial balance for demo
       userId: user.uid,
       bankId: selectedBank.id,
       bankName: selectedBank.name,
@@ -170,7 +218,7 @@ function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumbe
         <div className="text-center">
           <h1 className="text-3xl font-bold">Create Your Bank Account</h1>
           <p className="text-muted-foreground">
-            Enter an account number and select your bank to get started.
+            Select your bank and enter an account number to get started.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
