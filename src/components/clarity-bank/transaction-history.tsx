@@ -39,42 +39,60 @@ const handleDownloadReceipt = (transaction: Transaction) => {
   const categoryLabel = getCategoryInfo(transaction.category)?.label || transaction.category || 'N/A';
 
   // Header
-  doc.setFontSize(20);
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.text('ClarityBank', 20, 30);
-  doc.setFontSize(12);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'normal');
   doc.text('Transaction Receipt', 20, 40);
 
   // Details
   doc.setFontSize(10);
-  doc.text(`Transaction ID: ${transaction.id || 'N/A'}`, 20, 60);
-  doc.text(`Date: ${formattedDate}`, 20, 67);
-  doc.text(`Bank Account ID: ${transaction.bankAccountId || 'N/A'}`, 20, 74);
-  
+  let y = 60;
+  const leftMargin = 20;
+  const rightMargin = 80;
+  const lineSpacing = 7;
+
+  doc.setFont('helvetica', 'normal');
+  doc.text('Transaction ID:', leftMargin, y);
+  doc.text(transaction.id || 'N/A', rightMargin, y);
+  y += lineSpacing;
+
+  doc.text('Date:', leftMargin, y);
+  doc.text(formattedDate, rightMargin, y);
+  y += lineSpacing;
+
+  doc.text('Bank Account ID:', leftMargin, y);
+  doc.text(transaction.bankAccountId || 'N/A', rightMargin, y);
+  y += lineSpacing * 1.5; // Add extra space before amount
+
   // Amount
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Amount:', 20, 90);
-  doc.text(`${transaction.type === 'deposit' ? '+' : '-'} ₹${transaction.amount?.toFixed(2) || '0.00'}`, 60, 90);
-  
+  doc.text('Amount:', leftMargin, y);
+  doc.text(`${transaction.type === 'deposit' ? '+' : '-'} ₹${transaction.amount?.toFixed(2) || '0.00'}`, rightMargin, y);
+  y += lineSpacing * 1.5;
+
   // Other details
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Description:', 20, 100);
-  doc.text(transaction.description || 'N/A', 60, 100);
+  doc.text('Description:', leftMargin, y);
+  doc.text(transaction.description || 'N/A', rightMargin, y);
+  y += lineSpacing;
   
-  doc.text('Category:', 20, 107);
-  doc.text(categoryLabel, 60, 107);
+  doc.text('Category:', leftMargin, y);
+  doc.text(categoryLabel, rightMargin, y);
+  y += lineSpacing;
   
-  doc.text('Type:', 20, 114);
-  doc.text(transaction.type || 'N/A', 60, 114);
+  doc.text('Type:', leftMargin, y);
+  doc.text(transaction.type || 'N/A', rightMargin, y);
 
   // Footer
+  const pageHeight = doc.internal.pageSize.height;
   doc.setLineCap(2);
-  doc.line(20, doc.internal.pageSize.height - 40, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 40);
+  doc.line(20, pageHeight - 40, doc.internal.pageSize.width - 20, pageHeight - 40);
   doc.setFontSize(8);
-  doc.text('Thank you for banking with ClarityBank.', 20, doc.internal.pageSize.height - 30);
+  doc.text('Thank you for banking with ClarityBank.', 20, pageHeight - 30);
 
 
   doc.save(`receipt-${transaction.id}.pdf`);
