@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import { format, subDays, fromUnixTime } from 'date-fns';
+import { format, subDays, fromUnixTime, isValid } from 'date-fns';
 import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,12 +19,19 @@ type TransactionHistoryProps = {
 };
 
 // Helper to convert Firestore Timestamp to Date
-const toDate = (timestamp: any): Date => {
+const toDate = (timestamp: any): Date | null => {
   if (timestamp && typeof timestamp.seconds === 'number') {
     return fromUnixTime(timestamp.seconds);
   }
-  // Fallback for cases where it might already be a Date object or string
-  return new Date(timestamp);
+  // Try to parse it if it's a string or number
+  if (timestamp) {
+    const d = new Date(timestamp);
+    if (isValid(d)) {
+      return d;
+    }
+  }
+  // Return null for invalid or missing timestamps
+  return null;
 };
 
 
@@ -33,7 +40,9 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
   const [filterPeriod, setFilterPeriod] = useState<'all' | '7' | '30' | '90'>('all');
   
   const filteredTransactions = useMemo(() => {
-    let items = transactions.map(t => ({...t, date: toDate(t.timestamp)}));
+    let items = transactions
+      .map(t => ({...t, date: toDate(t.timestamp)}))
+      .filter(t => t.date !== null); // Filter out items with invalid dates
 
     if (filterType !== 'all') {
       items = items.filter(t => t.type === filterType);
@@ -42,10 +51,10 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
     if (filterPeriod !== 'all') {
       const days = parseInt(filterPeriod, 10);
       const cutoffDate = subDays(new Date(), days);
-      items = items.filter(t => t.date >= cutoffDate);
+      items = items.filter(t => t.date! >= cutoffDate);
     }
     
-    return items.sort((a, b) => b.date.getTime() - a.date.getTime());
+    return items.sort((a, b) => b.date!.getTime() - a.date!.getTime());
   }, [transactions, filterType, filterPeriod]);
 
   return (
@@ -107,7 +116,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                   <TableRow key={transaction.id} className="transition-colors">
                     <TableCell>
                       <div className="font-medium">{transaction.description}</div>
-                      <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy')}</div>
+                      {transaction.date && <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy')}</div>}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant={transaction.type === 'deposit' ? 'default' : 'secondary'} className={cn(
@@ -121,7 +130,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                         {transaction.type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{format(transaction.date, 'MMM d, yyyy')}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{transaction.date && format(transaction.date, 'MMM d, yyyy')}</TableCell>
                     <TableCell className={cn(
                       'text-right font-medium',
                       transaction.type === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
