@@ -26,9 +26,16 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/');
     } catch (error: any) {
+      let description = 'An unexpected error occurred. Please try again.';
+      if (error.code === 'auth/invalid-credential') {
+        description =
+          'Invalid email or password. Please check your credentials and try again.';
+      } else {
+        description = error.message;
+      }
       toast({
         title: 'Sign-in Failed',
-        description: error.message,
+        description: description,
         variant: 'destructive',
       });
       setIsLoading(false);
