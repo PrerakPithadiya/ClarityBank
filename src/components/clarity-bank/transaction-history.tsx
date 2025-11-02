@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { format, subDays, fromUnixTime, isValid } from 'date-fns';
-import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,10 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
 import { getCategoryInfo } from '@/lib/transaction-categories';
+import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
+import { ClarityBankLogo } from './clarity-bank-logo';
+
 
 type TransactionHistoryProps = {
   transactions: Transaction[];
@@ -26,6 +30,53 @@ const toDate = (timestamp: any): Date | null => {
   }
   const d = new Date(timestamp);
   return isValid(d) ? d : null;
+};
+
+const handleDownloadReceipt = (transaction: Transaction) => {
+  const doc = new jsPDF();
+  const date = toDate(transaction.timestamp);
+  const formattedDate = date ? format(date, 'MMM d, yyyy, h:mm a') : 'N/A';
+
+  // Header
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ClarityBank', 20, 30);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Transaction Receipt', 20, 40);
+
+  // Details
+  doc.setFontSize(10);
+  doc.text(`Transaction ID: ${transaction.id}`, 20, 60);
+  doc.text(`Date: ${formattedDate}`, 20, 67);
+  doc.text(`Bank Account ID: ${transaction.bankAccountId}`, 20, 74);
+  
+  // Amount
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Amount:', 20, 90);
+  doc.text(`${transaction.type === 'deposit' ? '+' : '-'} ₹${transaction.amount.toFixed(2)}`, 60, 90);
+  
+  // Other details
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Description:', 20, 100);
+  doc.text(transaction.description, 60, 100);
+  
+  doc.text('Category:', 20, 107);
+  doc.text(transaction.category, 60, 107);
+  
+  doc.text('Type:', 20, 114);
+  doc.text(transaction.type, 60, 114);
+
+  // Footer
+  doc.setLineCap(2);
+  doc.line(20, doc.internal.pageSize.height - 40, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 40);
+  doc.setFontSize(8);
+  doc.text('Thank you for banking with ClarityBank.', 20, doc.internal.pageSize.height - 30);
+
+
+  doc.save(`receipt-${transaction.id}.pdf`);
 };
 
 
@@ -108,6 +159,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                 <TableHead className="text-center">Type</TableHead>
                 <TableHead className="hidden sm:table-cell">Date</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-[50px] text-right">Receipt</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -119,6 +171,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                     <TableCell className="text-center"><Skeleton className="h-5 w-20 mx-auto" /></TableCell>
                     <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-full" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredTransactions.length > 0 ? (
@@ -150,11 +203,17 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                     )}>
                       {transaction.type === 'deposit' ? '+' : '-'}₹{transaction.amount.toFixed(2)}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(transaction)}>
+                        <Download className="h-4 w-4" />
+                        <span className="sr-only">Download Receipt</span>
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No transactions found for the selected filters.
                   </TableCell>
                 </TableRow>
