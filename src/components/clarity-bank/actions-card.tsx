@@ -8,15 +8,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowDown, ArrowUp, Plus, Minus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
 
 type ActionsCardProps = {
   balance: number;
-  onDeposit: (amount: number, description: string) => void;
-  onWithdraw: (amount: number, description: string) => void;
+  onDeposit: (amount: number, description: string) => Promise<void>;
+  onWithdraw: (amount: number, description: string) => Promise<void>;
 };
 
 const DepositFormSchema = z.object({
@@ -46,28 +46,35 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
   });
   
   React.useEffect(() => {
-    withdrawForm.reset();
-  }, [balance, withdrawForm]);
-
-
-  function handleDepositSubmit(values: z.infer<typeof DepositFormSchema>) {
-    onDeposit(values.amount, values.description);
-    toast({
-      title: "Deposit Successful",
-      description: `You have deposited ₹${values.amount.toFixed(2)}.`,
+    // This effect ensures the validation schema is updated when the balance changes.
+    // By re-registering the resolver, react-hook-form gets the new schema with the correct balance.
+    const newResolver = zodResolver(WithdrawFormSchema(balance));
+    withdrawForm.reset(undefined, {
+        // @ts-ignore
+        resolver: newResolver,
+        // Keep dirty fields as is, so user input is not lost on re-render
+        keepDirty: true, 
     });
-    depositForm.reset({ amount: '' as any, description: '' });
+}, [balance, withdrawForm]);
+
+
+  async function handleDepositSubmit(values: z.infer<typeof DepositFormSchema>) {
+    await onDeposit(values.amount, values.description);
+    toast({
+      title: "Deposit Initiated",
+      description: `Your deposit of ₹${values.amount.toFixed(2)} is being processed.`,
+    });
+    depositForm.reset();
     setDepositOpen(false);
   }
   
-  function handleWithdrawSubmit(values: z.infer<ReturnType<typeof WithdrawFormSchema>>) {
-    onWithdraw(values.amount, values.description);
+  async function handleWithdrawSubmit(values: z.infer<ReturnType<typeof WithdrawFormSchema>>) {
+    await onWithdraw(values.amount, values.description);
     toast({
-      title: "Withdrawal Successful",
-      description: `You have withdrawn ₹${values.amount.toFixed(2)}.`,
-      variant: "default",
+      title: "Withdrawal Initiated",
+      description: `Your withdrawal of ₹${values.amount.toFixed(2)} is being processed.`,
     });
-    withdrawForm.reset({ amount: '' as any, description: '' });
+    withdrawForm.reset();
     setWithdrawOpen(false);
   }
 
@@ -161,3 +168,5 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
     </Card>
   );
 }
+
+    
