@@ -21,13 +21,23 @@
         "userId": {
           "type": "string",
           "description": "Reference to User. (Relationship: User 1:N BankAccount)"
+        },
+        "bankId": {
+          "type": "string",
+          "description": "Identifier for the selected bank."
+        },
+        "bankName": {
+          "type": "string",
+          "description": "Name of the selected bank."
         }
       },
       "required": [
         "id",
         "accountNumber",
         "balance",
-        "userId"
+        "userId",
+        "bankId",
+        "bankName"
       ]
     },
     "Transaction": {

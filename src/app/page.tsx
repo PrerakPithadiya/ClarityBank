@@ -11,6 +11,8 @@ import { TransactionHistory } from '@/components/clarity-bank/transaction-histor
 import type { BankAccount, Transaction } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import banksData from '@/lib/banks.json';
 
 export default function Home() {
   const router = useRouter();
@@ -85,12 +87,17 @@ export default function Home() {
     batch.commit();
   };
 
-  const handleCreateAccount = async (accountNumber: string) => {
+  const handleCreateAccount = async (accountNumber: string, bankId: string) => {
     if (!user) return;
+    const selectedBank = banksData.flatMap(group => group.banks).find(b => b.id === bankId);
+    if (!selectedBank) return;
+
     const newAccount: Omit<BankAccount, 'id'> = {
       accountNumber,
       balance: 0,
       userId: user.uid,
+      bankId: selectedBank.id,
+      bankName: selectedBank.name,
     };
     await addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'bankAccounts'), newAccount);
   };
@@ -126,7 +133,7 @@ export default function Home() {
         <Header />
         <main className="grid gap-6 md:grid-cols-12">
           <div className="md:col-span-7 animate-in fade-in-0 zoom-in-95 duration-500">
-            <BalanceCard balance={bankAccount.balance} />
+            <BalanceCard balance={bankAccount.balance} bankName={bankAccount.bankName} />
           </div>
           <div className="md:col-span-5 animate-in fade-in-0 zoom-in-95 duration-500 delay-100">
             <ActionsCard
@@ -144,12 +151,17 @@ export default function Home() {
   );
 }
 
-function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumber: string) => void }) {
+function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumber: string, bankId: string) => void }) {
   const [accountNumber, setAccountNumber] = useState('');
+  const [bankId, setBankId] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreateAccount(accountNumber);
+    if (!bankId) {
+        alert('Please select a bank.');
+        return;
+    }
+    onCreateAccount(accountNumber, bankId);
   };
 
   return (
@@ -158,10 +170,32 @@ function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumbe
         <div className="text-center">
           <h1 className="text-3xl font-bold">Create Your Bank Account</h1>
           <p className="text-muted-foreground">
-            Enter an account number to get started.
+            Enter an account number and select your bank to get started.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+              <label htmlFor="bank" className="mb-2 block text-sm font-medium">
+                Bank
+              </label>
+              <Select onValueChange={setBankId} value={bankId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a bank" />
+                </SelectTrigger>
+                <SelectContent>
+                  {banksData.map((group) => (
+                    <SelectGroup key={group.category}>
+                      <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group.category}</p>
+                      {group.banks.map((bank) => (
+                        <SelectItem key={bank.id} value={bank.id}>
+                          {bank.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+          </div>
           <div>
             <label htmlFor="accountNumber" className="mb-2 block text-sm font-medium">
               Account Number

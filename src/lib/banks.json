@@ -1,0 +1,77 @@
+[
+  {
+    "category": "Public Sector Banks",
+    "banks": [
+      { "id": "sbi", "name": "State Bank of India" },
+      { "id": "pnb", "name": "Punjab National Bank" },
+      { "id": "bob", "name": "Bank of Baroda" },
+      { "id": "boi", "name": "Bank of India" },
+      { "id": "canara", "name": "Canara Bank" },
+      { "id": "union", "name": "Union Bank of India" },
+      { "id": "uco", "name": "UCO Bank" },
+      { "id": "indian", "name": "Indian Bank" },
+      { "id": "iob", "name": "Indian Overseas Bank" },
+      { "id": "bom", "name": "Bank of Maharashtra" },
+      { "id": "cbi", "name": "Central Bank of India" },
+      { "id": "psb", "name": "Punjab & Sind Bank" }
+    ]
+  },
+  {
+    "category": "Private Sector Banks",
+    "banks": [
+      { "id": "hdfc", "name": "HDFC Bank" },
+      { "id": "icici", "name": "ICICI Bank" },
+      { "id": "axis", "name": "Axis Bank" },
+      { "id": "kotak", "name": "Kotak Mahindra Bank" },
+      { "id": "indusind", "name": "IndusInd Bank" },
+      { "id": "idfcfirst", "name": "IDFC FIRST Bank" },
+      { "id": "yes", "name": "Yes Bank" },
+      { "id": "federal", "name": "Federal Bank" },
+      { "id": "bandhan", "name": "Bandhan Bank" },
+      { "id": "southindian", "name": "South Indian Bank" },
+      { "id": "rbl", "name": "RBL Bank" },
+      { "id": "karurvysya", "name": "Karur Vysya Bank" },
+      { "id": "csb", "name": "CSB Bank" },
+      { "id": "karnataka", "name": "Karnataka Bank" },
+      { "id": "cityunion", "name": "City Union Bank" },
+      { "id": "tmb", "name": "Tamilnad Mercantile Bank" },
+      { "id": "dcbbank", "name": "DCB Bank" }
+    ]
+  },
+  {
+    "category": "Small Finance Banks",
+    "banks": [
+      { "id": "au", "name": "AU Small Finance Bank" },
+      { "id": "equitas", "name": "Equitas Small Finance Bank" },
+      { "id": "ujjivan", "name": "Ujjivan Small Finance Bank" },
+      { "id": "janab", "name": "Jana Small Finance Bank" },
+      { "id": "suryoday", "name": "Suryoday Small Finance Bank" },
+      { "id": "utkarsh", "name": "Utkarsh Small Finance Bank" },
+      { "id": "northEast", "name": "North East Small Finance Bank" },
+      { "id": "shivalik", "name": "Shivalik Small Finance Bank" },
+      { "id": "esaf", "name": "ESAF Small Finance Bank" },
+      { "id": "fincare", "name": "Fincare Small Finance Bank" }
+    ]
+  },
+  {
+    "category": "Payments Banks",
+    "banks": [
+      { "id": "airtel", "name": "Airtel Payments Bank" },
+      { "id": "paytm", "name": "Paytm Payments Bank" },
+      { "id": "indiaPost", "name": "India Post Payments Bank" },
+      { "id": "nsdl", "name": "NSDL Payments Bank" },
+      { "id": "fino", "name": "Fino Payments Bank" }
+    ]
+  },
+  {
+    "category": "Foreign Banks (Major Branches in India)",
+    "banks": [
+      { "id": "hsbc", "name": "HSBC Bank" },
+      { "id": "citi", "name": "Citi Bank" },
+      { "id": "standardChartered", "name": "Standard Chartered Bank" },
+      { "id": "dbs", "name": "DBS Bank" },
+      { "id": "barclays", "name": "Barclays Bank" },
+      { "id": "deutsche", "name": "Deutsche Bank" }
+    ]
+  }
+]

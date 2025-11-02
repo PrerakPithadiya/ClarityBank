@@ -5,9 +5,10 @@ import { useState, useEffect } from 'react';
 
 type BalanceCardProps = {
   balance: number;
+  bankName?: string;
 };
 
-export function BalanceCard({ balance }: BalanceCardProps) {
+export function BalanceCard({ balance, bankName }: BalanceCardProps) {
   const [formattedBalance, setFormattedBalance] = useState<string>('');
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
   return (
     <Card className="h-full shadow-lg">
       <CardHeader>
-        <CardTitle className="text-muted-foreground font-medium">Current Balance</CardTitle>
+        <CardTitle className="text-muted-foreground font-medium">{bankName || 'Current Balance'}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-5xl font-bold tracking-tighter text-primary">

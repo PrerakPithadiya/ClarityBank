@@ -12,6 +12,8 @@ export interface BankAccount {
     accountNumber: string;
     balance: number;
     userId: string;
+    bankId: string;
+    bankName: string;
 }
 
 export interface User {
