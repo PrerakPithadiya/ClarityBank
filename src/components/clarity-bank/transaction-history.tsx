@@ -36,6 +36,7 @@ const handleDownloadReceipt = (transaction: Transaction) => {
   const doc = new jsPDF();
   const date = toDate(transaction.timestamp);
   const formattedDate = date ? format(date, 'MMM d, yyyy, h:mm a') : 'N/A';
+  const categoryLabel = getCategoryInfo(transaction.category)?.label || transaction.category || 'N/A';
 
   // Header
   doc.setFontSize(20);
@@ -47,27 +48,27 @@ const handleDownloadReceipt = (transaction: Transaction) => {
 
   // Details
   doc.setFontSize(10);
-  doc.text(`Transaction ID: ${transaction.id}`, 20, 60);
+  doc.text(`Transaction ID: ${transaction.id || 'N/A'}`, 20, 60);
   doc.text(`Date: ${formattedDate}`, 20, 67);
-  doc.text(`Bank Account ID: ${transaction.bankAccountId}`, 20, 74);
+  doc.text(`Bank Account ID: ${transaction.bankAccountId || 'N/A'}`, 20, 74);
   
   // Amount
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('Amount:', 20, 90);
-  doc.text(`${transaction.type === 'deposit' ? '+' : '-'} ₹${transaction.amount.toFixed(2)}`, 60, 90);
+  doc.text(`${transaction.type === 'deposit' ? '+' : '-'} ₹${transaction.amount?.toFixed(2) || '0.00'}`, 60, 90);
   
   // Other details
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text('Description:', 20, 100);
-  doc.text(transaction.description, 60, 100);
+  doc.text(transaction.description || 'N/A', 60, 100);
   
   doc.text('Category:', 20, 107);
-  doc.text(transaction.category, 60, 107);
+  doc.text(categoryLabel, 60, 107);
   
   doc.text('Type:', 20, 114);
-  doc.text(transaction.type, 60, 114);
+  doc.text(transaction.type || 'N/A', 60, 114);
 
   // Footer
   doc.setLineCap(2);
