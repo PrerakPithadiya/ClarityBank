@@ -4,14 +4,16 @@
 import { useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { Header } from '@/components/clarity-bank/header';
 import type { BankAccount, Transaction } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IndianRupee, ArrowDown, ArrowUp } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
+import { SmartSummaryCard } from '@/components/clarity-bank/smart-summary-card';
+
 
 const toDate = (timestamp: any): Date | null => {
   if (!timestamp) return null;
@@ -34,24 +36,22 @@ export default function DashboardPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const allTransactionsQuery = useMemoFirebase(
-    () => user ? collection(firestore, 'users', user.uid, 'transactions') : null,
-    [firestore, user]
-  );
-  // Note: For a real app with many accounts, you'd query transactions per account.
-  // For this dashboard, we'll aggregate across all of the user's accounts.
-  // We need to set up a collection group query for this to work in Firestore.
-  // Since we are creating transactions under bank accounts, we will query them per bank account
   const bankAccountsQuery = useMemoFirebase(
     () => user ? collection(firestore, 'users', user.uid, 'bankAccounts') : null,
     [firestore, user]
   );
   const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
   
-  // This is a simplified approach. A real-world app would use a collectionGroup query.
-  // For now, we'll just fetch from the first bank account.
+  // This is a simplified approach. For the AI summary, we will just fetch the last 100 transactions
+  // from the first bank account to avoid overwhelming the model and keep things fast.
   const transactionsQuery = useMemoFirebase(
-    () => (user && bankAccounts && bankAccounts.length > 0) ? collection(firestore, 'users', user.uid, 'bankAccounts', bankAccounts[0].id, 'transactions') : null,
+    () => (user && bankAccounts && bankAccounts.length > 0) 
+            ? query(
+                collection(firestore, 'users', user.uid, 'bankAccounts', bankAccounts[0].id, 'transactions'),
+                orderBy('timestamp', 'desc'),
+                limit(100)
+              ) 
+            : null,
     [firestore, user, bankAccounts]
   );
   const { data: transactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
@@ -103,6 +103,8 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">An overview of your financial activity.</p>
           </div>
+          
+          <SmartSummaryCard transactions={transactions || []} isLoading={isLoading} />
 
           <div className="grid gap-6 md:grid-cols-3">
              <Card>
