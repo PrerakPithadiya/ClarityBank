@@ -155,7 +155,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No transactions found. Start by making a deposit!
+                    No transactions found for the selected filters.
                   </TableCell>
                 </TableRow>
               )}
