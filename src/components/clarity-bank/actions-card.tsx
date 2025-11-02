@@ -36,12 +36,12 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
 
   const depositForm = useForm<z.infer<typeof DepositFormSchema>>({
     resolver: zodResolver(DepositFormSchema),
-    defaultValues: { amount: undefined, description: "" },
+    defaultValues: { amount: '' as any, description: "" },
   });
 
   const withdrawForm = useForm<z.infer<ReturnType<typeof WithdrawFormSchema>>>({
     resolver: zodResolver(WithdrawFormSchema(balance)),
-    defaultValues: { amount: undefined, description: "" },
+    defaultValues: { amount: '' as any, description: "" },
   });
   
   React.useEffect(() => {
@@ -55,7 +55,7 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
       title: "Deposit Successful",
       description: `You have deposited $${values.amount.toFixed(2)}.`,
     });
-    depositForm.reset();
+    depositForm.reset({ amount: '' as any, description: '' });
     setDepositOpen(false);
   }
   
@@ -66,7 +66,7 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
       description: `You have withdrawn $${values.amount.toFixed(2)}.`,
       variant: "default",
     });
-    withdrawForm.reset();
+    withdrawForm.reset({ amount: '' as any, description: '' });
     setWithdrawOpen(false);
   }
 
