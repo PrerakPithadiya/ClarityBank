@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,15 +32,16 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const newUser: User = {
-        id: user.uid,
+      const newUser: Omit<User, 'id'> = {
         firstName,
         lastName,
         email,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
       
       const userDocRef = doc(firestore, 'users', user.uid);
-      setDocumentNonBlocking(userDocRef, newUser, {});
+      setDocumentNonBlocking(userDocRef, {id: user.uid, ...newUser}, {});
 
       router.push('/');
     } catch (error: any) {

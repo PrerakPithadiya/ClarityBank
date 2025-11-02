@@ -29,6 +29,14 @@
         "bankName": {
           "type": "string",
           "description": "Name of the selected bank."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "updatedAt": {
+            "type": "string",
+            "format": "date-time"
         }
       },
       "required": [
@@ -37,7 +45,9 @@
         "balance",
         "userId",
         "bankId",
-        "bankName"
+        "bankName",
+        "createdAt",
+        "updatedAt"
       ]
     },
     "Transaction": {
@@ -54,26 +64,37 @@
           "type": "string",
           "description": "Reference to BankAccount. (Relationship: BankAccount 1:N Transaction)"
         },
-        "transactionType": {
+        "userId": {
           "type": "string",
-          "description": "The type of transaction (e.g., deposit, withdrawal)."
+          "description": "Reference to the User who performed the transaction."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of transaction (e.g., deposit, withdrawal).",
+          "enum": ["deposit", "withdrawal"]
         },
         "amount": {
           "type": "number",
           "description": "The amount of the transaction."
         },
-        "transactionDate": {
+        "description": {
           "type": "string",
-          "description": "The date and time of the transaction.",
+          "description": "A short description of the transaction."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The server-generated date and time of the transaction.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
         "bankAccountId",
-        "transactionType",
+        "userId",
+        "type",
         "amount",
-        "transactionDate"
+        "description",
+        "timestamp"
       ]
     },
     "User": {
@@ -98,13 +119,23 @@
           "type": "string",
           "description": "The email address of the user.",
           "format": "email"
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "updatedAt": {
+            "type": "string",
+            "format": "date-time"
         }
       },
       "required": [
         "id",
         "firstName",
         "lastName",
-        "email"
+        "email",
+        "createdAt",
+        "updatedAt"
       ]
     }
   },

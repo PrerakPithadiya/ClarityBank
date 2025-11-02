@@ -1,117 +1,123 @@
-/**
- * @file Firestore Security Rules for ClarityBank.
- *
- * Core Philosophy: This ruleset enforces a strict user-ownership model and validates
- * all incoming data to ensure its integrity and correctness.
- *
- * Key Security Decisions:
- * - Ownership: Users can only read/write their own data, nested under `/users/{userId}`.
- * - Schema Validation: Every write operation is validated against a strict schema to
- *   prevent malformed or malicious data.
- * - Immutability: Certain fields (like IDs and creation timestamps) cannot be changed after creation.
- * - Data Integrity: Business logic, like preventing negative balances, is enforced on the server.
- * - Server Timestamps: All timestamps are set by the server to ensure their authenticity.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // =====================================================================
-    // Helper Functions
-    // =====================================================================
 
-    /** Returns true if the user is authenticated. */
+    /* =========================
+       🔐 Helper Functions
+       ========================= */
+
+    // Authentication Checks
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Returns true if the authenticated user is the owner of the document. */
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    /** Returns true if the user is the owner and the document already exists. */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && exists(path);
-    }
-    
-    /** Validates the schema for a User document. */
-    function isValidUser(data) {
-        let requiredFields = ["id", "firstName", "lastName", "email"];
-        return data.keys().hasAll(requiredFields) && data.keys().hasOnly(requiredFields)
-            && data.id == request.auth.uid
-            && data.firstName is string
-            && data.lastName is string
-            && data.email is string;
+    function isAdmin() {
+      return request.auth.token.role == "admin";
     }
 
-    /** Validates the schema for a BankAccount document. */
-    function isValidBankAccount(data) {
-        let requiredFields = ["userId", "bankId", "bankName", "accountNumber", "balance"];
-        return data.keys().hasAll(requiredFields) && data.keys().hasOnly(requiredFields)
-            && data.userId == request.auth.uid
-            && data.bankId is string
-            && data.bankName is string
-            && data.accountNumber is string
-            && data.balance is number && data.balance >= 0;
+    // Utility: Ensure allowed fields only
+    function hasOnly(fields) {
+      return request.resource.data.keys().hasOnly(fields);
     }
 
-    /** Validates the schema for a Transaction document. */
-    function isValidTransaction(data, bankAccountId) {
-        let requiredFields = ["bankAccountId", "transactionType", "amount", "description", "transactionDate"];
-        return data.keys().hasAll(requiredFields) && data.keys().hasOnly(requiredFields)
-            && data.bankAccountId == bankAccountId
-            && (data.transactionType == "deposit" || data.transactionType == "withdrawal")
-            && data.amount is number && data.amount > 0
-            && data.description is string
-            && data.transactionDate == request.time;
+    // Utility: Ensure all required fields exist
+    function hasAll(fields) {
+      return request.resource.data.keys().hasAll(fields);
     }
 
-    // =====================================================================
-    // User Profiles
-    // =====================================================================
+    // Utility: Validate server-generated timestamps
+    function isServerTimestamp(field) {
+      return request.resource.data[field] == request.time;
+    }
 
+    /* =========================
+       👤 USERS COLLECTION
+       Path: /users/{userId}
+       ========================= */
     match /users/{userId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false; // Do not allow listing all users.
-      allow create: if isSignedIn() && isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isSignedIn() && isExistingOwner(userId) && isValidUser(request.resource.data);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
-    
-    // =====================================================================
-    // Bank Accounts
-    // =====================================================================
+      function isValidUserProfile() {
+        return hasOnly(["id", "firstName", "lastName", "email", "createdAt", "updatedAt"]) &&
+               request.resource.data.id == userId &&
+               request.resource.data.firstName is string &&
+               request.resource.data.lastName is string &&
+               request.resource.data.email is string &&
+               isServerTimestamp("createdAt") &&
+               isServerTimestamp("updatedAt");
+      }
 
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if false; // No public listing of users
+      allow create: if isSignedIn() && isOwner(userId) && isValidUserProfile();
+      allow update: if isSignedIn() && isOwner(userId) && isValidUserProfile();
+      allow delete: if isSignedIn() && (isOwner(userId) || isAdmin());
+    }
+
+    /* =========================
+       🏦 BANK ACCOUNTS
+       Path: /users/{userId}/bankAccounts/{bankAccountId}
+       ========================= */
     match /users/{userId}/bankAccounts/{bankAccountId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && isValidBankAccount(request.resource.data);
+      function isBankAccountValid() {
+        return hasOnly(["userId", "bankId", "bankName", "accountNumber", "balance", "createdAt", "updatedAt"]) &&
+               request.resource.data.userId == userId &&
+               request.resource.data.bankId is string &&
+               request.resource.data.bankName is string &&
+               request.resource.data.accountNumber is string &&
+               request.resource.data.balance is number &&
+               request.resource.data.balance >= 0 &&
+               isServerTimestamp("createdAt") &&
+               isServerTimestamp("updatedAt");
+      }
 
+      function isBalanceValid() {
+        return request.resource.data.balance is number;
+      }
+
+      function isValidDeposit(currentBalance, newBalance) {
+        return newBalance > currentBalance;
+      }
+
+      function isValidWithdrawal(currentBalance, newBalance) {
+        let isNotNegative = newBalance >= 0;
+        let isDecreasing = newBalance < currentBalance;
+        return isNotNegative && isDecreasing;
+      }
+
+      allow get, list: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow create: if isSignedIn() && isOwner(userId) && isBankAccountValid();
       allow update: if isSignedIn() &&
-                       isExistingOwner(userId) &&
-                       request.resource.data.userId == resource.data.userId && // userId cannot change
-                       request.resource.data.bankId == resource.data.bankId && // bankId cannot change
-                       request.resource.data.accountNumber == resource.data.accountNumber && // accountNumber cannot change
-                       request.resource.data.balance is number &&
-                       (request.resource.data.balance > resource.data.balance || // Deposit
-                        request.resource.data.balance < resource.data.balance);   // Withdrawal
-
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+                       isOwner(userId) &&
+                       isBalanceValid() &&
+                       (isValidDeposit(resource.data.balance, request.resource.data.balance) ||
+                        isValidWithdrawal(resource.data.balance, request.resource.data.balance)) &&
+                       isBankAccountValid();
+      allow delete: if isSignedIn() && (isOwner(userId) || isAdmin());
     }
-    
-    // =====================================================================
-    // Transactions
-    // =====================================================================
 
+    /* =========================
+       💸 TRANSACTIONS
+       Path: /users/{userId}/bankAccounts/{bankAccountId}/transactions/{transactionId}
+       ========================= */
     match /users/{userId}/bankAccounts/{bankAccountId}/transactions/{transactionId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      
-      // Transactions are immutable (create-only)
-      allow create: if isSignedIn() && isOwner(userId) && isValidTransaction(request.resource.data, bankAccountId);
-      allow update: if false; 
-      allow delete: if false;
+      function isTransactionValid() {
+        return hasAll(["bankAccountId", "userId", "type", "amount", "description", "timestamp"]) &&
+               request.resource.data.bankAccountId == bankAccountId &&
+               request.resource.data.userId == userId &&
+               (request.resource.data.type == "deposit" || request.resource.data.type == "withdrawal") &&
+               request.resource.data.amount is number &&
+               request.resource.data.amount > 0 &&
+               request.resource.data.description is string &&
+               isServerTimestamp("timestamp");
+      }
+
+      allow get, list: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow create: if isSignedIn() && isOwner(userId) && isTransactionValid();
+      allow update: if false; // Immutable records
+      allow delete: if false; // Immutable records
     }
   }
 }

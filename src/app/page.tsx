@@ -64,16 +64,17 @@ export default function Home() {
         }
   
         const newBalance = accountDoc.data().balance + amount;
-        transaction.update(bankAccountRef, { balance: newBalance });
+        transaction.update(bankAccountRef, { balance: newBalance, updatedAt: serverTimestamp() });
   
         const newTransactionRef = doc(transactionCollectionRef);
         transaction.set(newTransactionRef, {
           id: newTransactionRef.id,
           bankAccountId: bankAccount.id,
-          transactionType: 'deposit',
+          userId: user.uid,
+          type: 'deposit',
           amount,
           description,
-          transactionDate: serverTimestamp(),
+          timestamp: serverTimestamp(),
         });
       });
       toast({
@@ -109,16 +110,17 @@ export default function Home() {
         }
   
         const newBalance = currentBalance - amount;
-        transaction.update(bankAccountRef, { balance: newBalance });
+        transaction.update(bankAccountRef, { balance: newBalance, updatedAt: serverTimestamp() });
   
         const newTransactionRef = doc(transactionCollectionRef);
         transaction.set(newTransactionRef, {
           id: newTransactionRef.id,
           bankAccountId: bankAccount.id,
-          transactionType: 'withdrawal',
+          userId: user.uid,
+          type: 'withdrawal',
           amount,
           description,
-          transactionDate: serverTimestamp(),
+          timestamp: serverTimestamp(),
         });
       });
       toast({
@@ -146,6 +148,8 @@ export default function Home() {
       userId: user.uid,
       bankId: selectedBank.id,
       bankName: selectedBank.name,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
     await addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'bankAccounts'), newAccount);
   };

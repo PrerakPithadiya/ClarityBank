@@ -33,10 +33,10 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
   const [filterPeriod, setFilterPeriod] = useState<'all' | '7' | '30' | '90'>('all');
   
   const filteredTransactions = useMemo(() => {
-    let items = transactions.map(t => ({...t, date: toDate(t.transactionDate)}));
+    let items = transactions.map(t => ({...t, date: toDate(t.timestamp)}));
 
     if (filterType !== 'all') {
-      items = items.filter(t => t.transactionType === filterType);
+      items = items.filter(t => t.type === filterType);
     }
     
     if (filterPeriod !== 'all') {
@@ -110,23 +110,23 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                       <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy')}</div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant={transaction.transactionType === 'deposit' ? 'default' : 'secondary'} className={cn(
+                      <Badge variant={transaction.type === 'deposit' ? 'default' : 'secondary'} className={cn(
                         'w-fit',
-                         transaction.transactionType === 'deposit' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                         transaction.type === 'deposit' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
                       )}>
-                        {transaction.transactionType === 'deposit' ? 
+                        {transaction.type === 'deposit' ? 
                           <ArrowUpCircle className="mr-1 h-4 w-4" /> : 
                           <ArrowDownCircle className="mr-1 h-4 w-4" />
                         }
-                        {transaction.transactionType}
+                        {transaction.type}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{format(transaction.date, 'MMM d, yyyy')}</TableCell>
                     <TableCell className={cn(
                       'text-right font-medium',
-                      transaction.transactionType === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                      transaction.type === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                     )}>
-                      {transaction.transactionType === 'deposit' ? '+' : '-'}₹{transaction.amount.toFixed(2)}
+                      {transaction.type === 'deposit' ? '+' : '-'}₹{transaction.amount.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))

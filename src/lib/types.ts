@@ -1,10 +1,11 @@
 export interface Transaction {
   id: string;
   bankAccountId: string;
-  transactionType: 'deposit' | 'withdrawal';
+  userId: string;
+  type: 'deposit' | 'withdrawal';
   amount: number;
   description: string;
-  transactionDate: any; 
+  timestamp: any; 
 }
 
 export interface BankAccount {
@@ -14,6 +15,8 @@ export interface BankAccount {
     userId: string;
     bankId: string;
     bankName: string;
+    createdAt: any;
+    updatedAt: any;
 }
 
 export interface User {
@@ -21,4 +24,6 @@ export interface User {
     firstName: string;
     lastName: string;
     email: string;
+    createdAt: any;
+    updatedAt: any;
 }
