@@ -1,3 +1,6 @@
+
+export type TransactionCategory = "Food" | "Shopping" | "Transport" | "Bills" | "Entertainment" | "Other";
+
 export interface Transaction {
   id: string;
   bankAccountId: string;
@@ -5,6 +8,7 @@ export interface Transaction {
   type: 'deposit' | 'withdrawal';
   amount: number;
   description: string;
+  category: TransactionCategory;
   timestamp: any; 
 }
 

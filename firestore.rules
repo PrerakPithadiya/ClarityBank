@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -93,8 +94,7 @@ service cloud.firestore {
                        isOwner(userId) &&
                        isBalanceValid() &&
                        (isValidDeposit(resource.data.balance, request.resource.data.balance) ||
-                        isValidWithdrawal(resource.data.balance, request.resource.data.balance)) &&
-                       isBankAccountValid();
+                        isValidWithdrawal(resource.data.balance, request.resource.data.balance));
       allow delete: if isSignedIn() && (isOwner(userId) || isAdmin());
     }
 
@@ -104,13 +104,14 @@ service cloud.firestore {
        ========================= */
     match /users/{userId}/bankAccounts/{bankAccountId}/transactions/{transactionId} {
       function isTransactionValid() {
-        return hasAll(["bankAccountId", "userId", "type", "amount", "description", "timestamp"]) &&
+        return hasAll(["bankAccountId", "userId", "type", "amount", "description", "category", "timestamp"]) &&
                request.resource.data.bankAccountId == bankAccountId &&
                request.resource.data.userId == userId &&
                (request.resource.data.type == "deposit" || request.resource.data.type == "withdrawal") &&
                request.resource.data.amount is number &&
                request.resource.data.amount > 0 &&
                request.resource.data.description is string &&
+               request.resource.data.category is string &&
                isServerTimestamp("timestamp");
       }
 

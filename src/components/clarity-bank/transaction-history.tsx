@@ -89,6 +89,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
             <TableHeader>
               <TableRow>
                 <TableHead>Description</TableHead>
+                <TableHead className="text-center hidden sm:table-cell">Category</TableHead>
                 <TableHead className="text-center">Type</TableHead>
                 <TableHead className="hidden sm:table-cell">Date</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
@@ -99,6 +100,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
+                    <TableCell className="hidden sm:table-cell text-center"><Skeleton className="h-5 w-20 mx-auto" /></TableCell>
                     <TableCell className="text-center"><Skeleton className="h-5 w-20 mx-auto" /></TableCell>
                     <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
@@ -110,6 +112,9 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                     <TableCell>
                       <div className="font-medium">{transaction.description}</div>
                       {transaction.date && <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy, h:mm a')}</div>}
+                    </TableCell>
+                     <TableCell className="text-center hidden sm:table-cell">
+                      <Badge variant="outline">{transaction.category}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant={transaction.type === 'deposit' ? 'default' : 'secondary'} className={cn(
@@ -134,7 +139,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No transactions found. Start by making a deposit!
                   </TableCell>
                 </TableRow>

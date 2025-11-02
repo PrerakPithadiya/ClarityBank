@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "BankAccount": {
@@ -81,6 +82,11 @@
           "type": "string",
           "description": "A short description of the transaction."
         },
+        "category": {
+          "type": "string",
+          "description": "The category of the transaction.",
+          "enum": ["Food", "Shopping", "Transport", "Bills", "Entertainment", "Other"]
+        },
         "timestamp": {
           "type": "string",
           "description": "The server-generated date and time of the transaction.",
@@ -94,6 +100,7 @@
         "type",
         "amount",
         "description",
+        "category",
         "timestamp"
       ]
     },

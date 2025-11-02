@@ -9,12 +9,14 @@ import { Header } from '@/components/clarity-bank/header';
 import { BalanceCard } from '@/components/clarity-bank/balance-card';
 import { ActionsCard } from '@/components/clarity-bank/actions-card';
 import { TransactionHistory } from '@/components/clarity-bank/transaction-history';
-import type { BankAccount, Transaction } from '@/lib/types';
+import type { BankAccount, Transaction, TransactionCategory } from '@/lib/types';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import banksData from '@/lib/banks.json';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export default function Home() {
   const router = useRouter();
@@ -51,7 +53,7 @@ export default function Home() {
   );
   const { data: transactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
 
-  const handleDeposit = async (amount: number, description: string) => {
+  const handleDeposit = async (amount: number, description: string, category: TransactionCategory) => {
     if (!user || !bankAccount) return;
 
     const bankAccountRef = doc(firestore, 'users', user.uid, 'bankAccounts', bankAccount.id);
@@ -68,6 +70,7 @@ export default function Home() {
       type: 'deposit' as 'deposit',
       amount,
       description,
+      category,
       timestamp: serverTimestamp(),
     };
     
@@ -75,7 +78,7 @@ export default function Home() {
     addDocumentNonBlocking(transactionCollectionRef, newTransaction);
   };
   
-  const handleWithdrawal = async (amount: number, description: string) => {
+  const handleWithdrawal = async (amount: number, description: string, category: TransactionCategory) => {
     if (!user || !bankAccount) return;
   
     if (bankAccount.balance < amount) {
@@ -101,6 +104,7 @@ export default function Home() {
       type: 'withdrawal' as 'withdrawal',
       amount,
       description,
+      category,
       timestamp: serverTimestamp(),
     };
   
@@ -223,22 +227,21 @@ function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumbe
             <label htmlFor="accountNumber" className="mb-2 block text-sm font-medium">
               Account Number
             </label>
-            <input
+            <Input
               id="accountNumber"
               type="text"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
               placeholder="e.g., 123456789"
-              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
               required
             />
           </div>
-          <button
+          <Button
             type="submit"
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="w-full"
           >
             Create Account
-          </button>
+          </Button>
         </form>
       </div>
     </div>

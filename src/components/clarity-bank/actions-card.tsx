@@ -12,21 +12,27 @@ import { Plus, Minus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import React from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { TransactionCategory } from "@/lib/types";
 
 type ActionsCardProps = {
   balance: number;
-  onDeposit: (amount: number, description: string) => Promise<void>;
-  onWithdraw: (amount: number, description: string) => Promise<void>;
+  onDeposit: (amount: number, description: string, category: TransactionCategory) => Promise<void>;
+  onWithdraw: (amount: number, description: string, category: TransactionCategory) => Promise<void>;
 };
+
+const transactionCategories: TransactionCategory[] = ["Food", "Shopping", "Transport", "Bills", "Entertainment", "Other"];
 
 const DepositFormSchema = z.object({
   amount: z.coerce.number().positive({ message: "Amount must be greater than zero." }).max(1000000, { message: "Deposit cannot exceed ₹1,000,000." }),
   description: z.string().min(1, "Description is required.").max(50, "Description is too long."),
+  category: z.enum(transactionCategories),
 });
 
 const WithdrawFormSchema = (balance: number) => z.object({
   amount: z.coerce.number().positive({ message: "Amount must be greater than zero." }).max(balance, { message: "Insufficient funds." }),
   description: z.string().min(1, "Description is required.").max(50, "Description is too long."),
+  category: z.enum(transactionCategories),
 });
 
 
@@ -37,26 +43,26 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
 
   const depositForm = useForm<z.infer<typeof DepositFormSchema>>({
     resolver: zodResolver(DepositFormSchema),
-    defaultValues: { amount: '' as any, description: "" },
+    defaultValues: { amount: "" as any, description: "", category: "Other" },
   });
 
   const withdrawForm = useForm<z.infer<ReturnType<typeof WithdrawFormSchema>>>({
     resolver: zodResolver(WithdrawFormSchema(balance)),
-    defaultValues: { amount: '' as any, description: "" },
+    defaultValues: { amount: "" as any, description: "", category: "Other" },
   });
   
   React.useEffect(() => {
     const newResolver = zodResolver(WithdrawFormSchema(balance));
-    withdrawForm.reset(undefined, {
+    withdrawForm.reset(withdrawForm.getValues(), {
         // @ts-ignore
         resolver: newResolver,
         keepDirty: true, 
     });
-}, [balance, withdrawForm]);
+  }, [balance, withdrawForm]);
 
 
   async function handleDepositSubmit(values: z.infer<typeof DepositFormSchema>) {
-    await onDeposit(values.amount, values.description);
+    await onDeposit(values.amount, values.description, values.category);
     toast({
       title: "Deposit Initiated",
       description: `Your deposit of ₹${values.amount.toFixed(2)} is being processed.`,
@@ -66,7 +72,7 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
   }
   
   async function handleWithdrawSubmit(values: z.infer<ReturnType<typeof WithdrawFormSchema>>) {
-    await onWithdraw(values.amount, values.description);
+    await onWithdraw(values.amount, values.description, values.category);
     toast({
       title: "Withdrawal Initiated",
       description: `Your withdrawal of ₹${values.amount.toFixed(2)} is being processed.`,
@@ -113,6 +119,28 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
                     <FormMessage />
                   </FormItem>
                 )} />
+                 <FormField
+                  control={depositForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {transactionCategories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <DialogFooter>
                   <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
                   <Button type="submit">Deposit</Button>
@@ -153,6 +181,28 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
                     <FormMessage />
                   </FormItem>
                 )} />
+                <FormField
+                  control={withdrawForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {transactionCategories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <DialogFooter>
                   <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
                   <Button type="submit" variant="destructive">Withdraw</Button>
