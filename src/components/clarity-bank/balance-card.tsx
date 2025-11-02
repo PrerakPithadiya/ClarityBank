@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +14,9 @@ export function BalanceCard({ balance, bankName }: BalanceCardProps) {
 
   useEffect(() => {
     setFormattedBalance(
-      new Intl.NumberFormat('en-US', {
+      new Intl.NumberFormat('en-IN', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'INR',
       }).format(balance)
     );
   }, [balance]);
@@ -27,7 +28,7 @@ export function BalanceCard({ balance, bankName }: BalanceCardProps) {
       </CardHeader>
       <CardContent>
         <div className="text-5xl font-bold tracking-tighter text-primary">
-          {formattedBalance || <span className="opacity-50">$...</span>}
+          {formattedBalance || <span className="opacity-50">₹...</span>}
         </div>
         <CardDescription className="mt-2">Available for use</CardDescription>
       </CardContent>

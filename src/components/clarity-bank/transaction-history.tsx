@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -125,7 +126,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                       'text-right font-medium',
                       transaction.transactionType === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                     )}>
-                      {transaction.transactionType === 'deposit' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                      {transaction.transactionType === 'deposit' ? '+' : '-'}₹{transaction.amount.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))

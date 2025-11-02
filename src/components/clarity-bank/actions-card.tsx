@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ type ActionsCardProps = {
 };
 
 const DepositFormSchema = z.object({
-  amount: z.coerce.number().positive({ message: "Amount must be greater than zero." }).max(10000, { message: "Deposit cannot exceed $10,000." }),
+  amount: z.coerce.number().positive({ message: "Amount must be greater than zero." }).max(1000000, { message: "Deposit cannot exceed ₹1,000,000." }),
   description: z.string().min(1, "Description is required.").max(50, "Description is too long."),
 });
 
@@ -53,7 +54,7 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
     onDeposit(values.amount, values.description);
     toast({
       title: "Deposit Successful",
-      description: `You have deposited $${values.amount.toFixed(2)}.`,
+      description: `You have deposited ₹${values.amount.toFixed(2)}.`,
     });
     depositForm.reset({ amount: '' as any, description: '' });
     setDepositOpen(false);
@@ -63,7 +64,7 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
     onWithdraw(values.amount, values.description);
     toast({
       title: "Withdrawal Successful",
-      description: `You have withdrawn $${values.amount.toFixed(2)}.`,
+      description: `You have withdrawn ₹${values.amount.toFixed(2)}.`,
       variant: "default",
     });
     withdrawForm.reset({ amount: '' as any, description: '' });
