@@ -46,13 +46,10 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
   });
   
   React.useEffect(() => {
-    // This effect ensures the validation schema is updated when the balance changes.
-    // By re-registering the resolver, react-hook-form gets the new schema with the correct balance.
     const newResolver = zodResolver(WithdrawFormSchema(balance));
     withdrawForm.reset(undefined, {
         // @ts-ignore
         resolver: newResolver,
-        // Keep dirty fields as is, so user input is not lost on re-render
         keepDirty: true, 
     });
 }, [balance, withdrawForm]);
@@ -168,5 +165,3 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
     </Card>
   );
 }
-
-    

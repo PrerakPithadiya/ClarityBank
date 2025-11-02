@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, doc, serverTimestamp, writeBatch, getDoc, runTransaction, Transaction as FirestoreTransaction } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, addDoc } from 'firebase/firestore';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Header } from '@/components/clarity-bank/header';
 import { BalanceCard } from '@/components/clarity-bank/balance-card';
@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import banksData from '@/lib/banks.json';
 import { useToast } from '@/hooks/use-toast';
-import { addDoc } from 'firebase/firestore';
 
 export default function Home() {
   const router = useRouter();
@@ -114,7 +113,7 @@ export default function Home() {
     const selectedBank = banksData.flatMap(group => group.banks).find(b => b.id === bankId);
     if (!selectedBank) return;
 
-    const newAccount: Omit<BankAccount, 'id'|'createdAt'|'updatedAt'> & {createdAt: any, updatedAt: any} = {
+    const newAccountData = {
       accountNumber,
       balance: 1000, // Start with some initial balance for demo
       userId: user.uid,
@@ -123,7 +122,7 @@ export default function Home() {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    await addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'bankAccounts'), newAccount);
+    await addDoc(collection(firestore, 'users', user.uid, 'bankAccounts'), newAccountData);
   };
   
   if (isUserLoading || isLoadingBankAccounts) {
@@ -245,5 +244,3 @@ function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumbe
     </div>
   );
 }
-
-    

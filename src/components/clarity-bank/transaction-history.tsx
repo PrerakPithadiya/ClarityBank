@@ -18,20 +18,13 @@ type TransactionHistoryProps = {
   isLoading: boolean;
 };
 
-// Helper to convert Firestore Timestamp to Date
 const toDate = (timestamp: any): Date | null => {
+  if (!timestamp) return null;
   if (timestamp && typeof timestamp.seconds === 'number') {
     return fromUnixTime(timestamp.seconds);
   }
-  // Try to parse it if it's a string or number
-  if (timestamp) {
-    const d = new Date(timestamp);
-    if (isValid(d)) {
-      return d;
-    }
-  }
-  // Return null for invalid or missing timestamps
-  return null;
+  const d = new Date(timestamp);
+  return isValid(d) ? d : null;
 };
 
 
@@ -42,7 +35,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
   const filteredTransactions = useMemo(() => {
     let items = transactions
       .map(t => ({...t, date: toDate(t.timestamp)}))
-      .filter(t => t.date !== null); // Filter out items with invalid dates
+      .filter(t => t.date !== null);
 
     if (filterType !== 'all') {
       items = items.filter(t => t.type === filterType);
@@ -113,7 +106,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                 ))
               ) : filteredTransactions.length > 0 ? (
                 filteredTransactions.map((transaction) => (
-                  <TableRow key={transaction.id} className="transition-colors">
+                  <TableRow key={transaction.id} className="transition-colors animate-in fade-in-0">
                     <TableCell>
                       <div className="font-medium">{transaction.description}</div>
                       {transaction.date && <div className="text-sm text-muted-foreground sm:hidden">{format(transaction.date, 'MMM d, yyyy')}</div>}
@@ -142,7 +135,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
-                    No transactions found.
+                    No transactions found. Start by making a deposit!
                   </TableCell>
                 </TableRow>
               )}
