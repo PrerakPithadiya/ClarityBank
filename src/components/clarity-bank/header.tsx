@@ -18,8 +18,9 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLogout = async () => {
-    await signOut(auth);
+  const handleLogout = () => {
+    // Don't await signOut. Redirect immediately for a faster user experience.
+    signOut(auth);
     router.push('/login');
   };
 
