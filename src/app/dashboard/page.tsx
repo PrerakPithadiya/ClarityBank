@@ -168,8 +168,8 @@ export default function DashboardPage() {
                         cursor={{fill: 'hsl(var(--muted))'}}
                       />
                       <Legend />
-                      <Bar dataKey="deposits" fill="#16a34a" name="Deposits" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="withdrawals" fill="#dc2626" name="Withdrawals" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="deposits" fill="hsl(var(--primary))" name="Deposits" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="withdrawals" fill="hsl(var(--destructive))" name="Withdrawals" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}

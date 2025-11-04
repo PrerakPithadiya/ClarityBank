@@ -2,13 +2,16 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { BankAccount, Transaction, EarnedBadge } from '@/lib/types';
+import type { BankAccount, Transaction, User } from '@/lib/types';
 import { getEarnedBadgesFromActivity } from '@/services/badge-service';
-import { Trophy } from 'lucide-react';
+import { BADGES } from '@/lib/badges';
+import { Trophy, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
+import { useUser } from '@/firebase';
 
 interface BadgesCardProps {
   transactions: Transaction[];
@@ -17,18 +20,23 @@ interface BadgesCardProps {
 }
 
 export function BadgesCard({ transactions, bankAccount, isLoading }: BadgesCardProps) {
+  const { user } = useUser();
+
   const earnedBadges = useMemo(() => {
-    if (!bankAccount || transactions.length === 0) {
+    if (!bankAccount || !user) {
       return [];
     }
-    // This function checks the conditions on the client-side for immediate UI feedback.
-    return getEarnedBadgesFromActivity(transactions, bankAccount);
-  }, [transactions, bankAccount]);
+    return getEarnedBadgesFromActivity(transactions, bankAccount, user);
+  }, [transactions, bankAccount, user]);
+
+  const earnedBadgeIds = useMemo(() => new Set(earnedBadges.map(b => b.id)), [earnedBadges]);
+  const totalBadges = BADGES.length;
+  const progressValue = (earnedBadges.length / totalBadges) * 100;
 
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="flex items-center gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <Skeleton className="h-10 w-10 rounded-lg" />
           <Skeleton className="h-10 w-10 rounded-lg" />
           <Skeleton className="h-10 w-10 rounded-lg" />
@@ -36,38 +44,35 @@ export function BadgesCard({ transactions, bankAccount, isLoading }: BadgesCardP
         </div>
       );
     }
-
-    if (earnedBadges.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center text-center text-muted-foreground py-4">
-          <Trophy className="h-8 w-8 mb-2" />
-          <p className="text-sm font-medium">No Badges Yet</p>
-          <p className="text-xs">Keep using your account to earn achievements!</p>
-        </div>
-      );
-    }
-
+    
     return (
       <TooltipProvider>
-        <div className="flex items-center gap-4">
-          {earnedBadges.map((badge) => (
-            <Tooltip key={badge.id}>
-              <TooltipTrigger asChild>
-                <div
-                  className={cn(
-                    'relative flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600 transition-transform hover:scale-110 dark:bg-yellow-900/50 dark:text-yellow-400',
-                    'animate-in fade-in-0 zoom-in-95'
-                  )}
-                >
-                  <badge.icon className="h-6 w-6" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="font-bold">{badge.name}</p>
-                <p className="text-sm text-muted-foreground">{badge.description}</p>
-              </TooltipContent>
-            </Tooltip>
-          ))}
+        <div className="grid grid-cols-4 gap-4">
+          {BADGES.map((badge) => {
+            const isEarned = earnedBadgeIds.has(badge.id);
+            return (
+              <Tooltip key={badge.id}>
+                <TooltipTrigger asChild>
+                  <div
+                    className={cn(
+                      'relative flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300',
+                      isEarned 
+                        ? 'bg-yellow-100 text-yellow-600 animate-in fade-in-0 zoom-in-95 hover:scale-110 dark:bg-yellow-900/50 dark:text-yellow-400' 
+                        : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    <badge.icon className="h-6 w-6" />
+                    {!isEarned && <Lock className="absolute h-3 w-3 bottom-1 right-1" />}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-bold">{badge.name}</p>
+                  <p className="text-sm text-muted-foreground">{badge.description}</p>
+                  {!isEarned && <p className="text-xs text-blue-500 mt-1">Keep going to unlock!</p>}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
         </div>
       </TooltipProvider>
     );
@@ -77,9 +82,15 @@ export function BadgesCard({ transactions, bankAccount, isLoading }: BadgesCardP
     <Card className="h-full">
       <CardHeader>
         <CardTitle>My Achievements</CardTitle>
-        <CardDescription>Badges you've earned.</CardDescription>
+        <CardDescription>Badges you've earned for your financial habits.</CardDescription>
       </CardHeader>
       <CardContent>{renderContent()}</CardContent>
+      <CardFooter className="flex-col items-start gap-2">
+         <p className="text-sm text-muted-foreground">
+            You've unlocked {earnedBadges.length} out of {totalBadges} badges.
+        </p>
+        <Progress value={progressValue} aria-label={`${progressValue}% of badges earned`} />
+      </CardFooter>
     </Card>
   );
 }

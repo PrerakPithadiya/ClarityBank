@@ -1,9 +1,9 @@
 
 'use client';
 
-import { Award, TrendingUp, Gem, ShieldCheck } from 'lucide-react';
-import type { BadgeDefinition, Transaction, BankAccount } from './types';
-import { subDays, differenceInDays } from 'date-fns';
+import { Award, TrendingUp, Gem, ShieldCheck, HandCoins, CalendarCheck, Clock, Milestone } from 'lucide-react';
+import type { BadgeDefinition, Transaction, BankAccount, User } from './types';
+import { subDays, differenceInDays, isWithinInterval } from 'date-fns';
 
 const toDate = (timestamp: any): Date | null => {
   if (!timestamp) return null;
@@ -16,9 +16,27 @@ const toDate = (timestamp: any): Date | null => {
 
 export const BADGES: BadgeDefinition[] = [
   {
-    id: 'smart-saver',
-    name: 'Smart Saver',
-    description: 'Awarded for having no withdrawals in the last 30 days.',
+    id: 'gold-saver',
+    name: 'Gold Saver',
+    description: 'Reach a balance of ₹10,000.',
+    icon: Gem,
+    check: (transactions: Transaction[], account: BankAccount) => {
+      return account.balance >= 10000;
+    },
+  },
+  {
+    id: 'milestone-100',
+    name: 'Milestone 100',
+    description: 'Make 100 total transactions.',
+    icon: Milestone,
+    check: (transactions: Transaction[]) => {
+      return transactions.length >= 100;
+    },
+  },
+  {
+    id: 'zero-debt',
+    name: 'Zero Debt',
+    description: 'Have no withdrawals for 30 consecutive days.',
     icon: ShieldCheck,
     check: (transactions: Transaction[]) => {
       const thirtyDaysAgo = subDays(new Date(), 30);
@@ -30,18 +48,9 @@ export const BADGES: BadgeDefinition[] = [
     },
   },
   {
-    id: 'active-user-10',
-    name: 'Active User',
-    description: 'Awarded for making your first 10 transactions.',
-    icon: Award,
-    check: (transactions: Transaction[]) => {
-      return transactions.length >= 10;
-    },
-  },
-  {
-    id: 'consistency-king-5',
-    name: 'Consistency King',
-    description: 'Awarded for 5 consecutive days of deposits.',
+    id: 'consistency-champ',
+    name: 'Consistency Champ',
+    description: 'Make 5 deposits on 5 consecutive days.',
     icon: TrendingUp,
     check: (transactions: Transaction[]) => {
       const deposits = transactions
@@ -53,12 +62,18 @@ export const BADGES: BadgeDefinition[] = [
       if (deposits.length < 5) return false;
 
       let consecutiveDays = 1;
+      let uniqueDays = new Set([deposits[0].toDateString()]);
+      
       for (let i = 1; i < deposits.length; i++) {
+        if(uniqueDays.has(deposits[i].toDateString())) continue;
+
         const dayDiff = differenceInDays(deposits[i], deposits[i - 1]);
         if (dayDiff === 1) {
           consecutiveDays++;
+          uniqueDays.add(deposits[i].toDateString());
         } else if (dayDiff > 1) {
           consecutiveDays = 1; // Reset
+          uniqueDays = new Set([deposits[i].toDateString()]);
         }
         if (consecutiveDays >= 5) {
           return true;
@@ -68,12 +83,52 @@ export const BADGES: BadgeDefinition[] = [
     },
   },
   {
-    id: 'big-saver-10k',
-    name: 'Big Saver',
-    description: 'Awarded for reaching a balance of ₹10,000.',
-    icon: Gem,
-    check: (transactions: Transaction[], account: BankAccount) => {
-      return account.balance >= 10000;
+    id: 'smart-spender',
+    name: 'Smart Spender',
+    description: 'Make 10+ transactions categorized as "Bills" or "Groceries".',
+    icon: HandCoins,
+    check: (transactions: Transaction[]) => {
+      const essentialSpend = transactions.filter(t => t.category === 'Bills' || t.category === 'Groceries');
+      return essentialSpend.length >= 10;
+    },
+  },
+  {
+    id: 'early-bird',
+    name: 'Early Bird',
+    description: 'Make your first deposit within 24 hours of signing up.',
+    icon: CalendarCheck,
+    check: (transactions: Transaction[], account: BankAccount, user?: User | null) => {
+        const firstDeposit = transactions.find(t => t.type === 'deposit');
+        const userCreationDate = user ? toDate(user.createdAt) : null;
+        const firstDepositDate = firstDeposit ? toDate(firstDeposit.timestamp) : null;
+
+        if (!userCreationDate || !firstDepositDate) return false;
+        
+        const oneDayAfterCreation = new Date(userCreationDate.getTime() + (24 * 60 * 60 * 1000));
+        return isWithinInterval(firstDepositDate, { start: userCreationDate, end: oneDayAfterCreation });
+    }
+  },
+   {
+    id: 'night-owl',
+    name: 'Night Owl',
+    description: 'Make a transaction between 12 AM and 5 AM.',
+    icon: Clock,
+    check: (transactions: Transaction[]) => {
+      return transactions.some(t => {
+        const transDate = toDate(t.timestamp);
+        if (!transDate) return false;
+        const hour = transDate.getHours();
+        return hour >= 0 && hour < 5;
+      });
+    }
+  },
+  {
+    id: 'active-user',
+    name: 'Active User',
+    description: 'Awarded for making your first 10 transactions.',
+    icon: Award,
+    check: (transactions: Transaction[]) => {
+      return transactions.length >= 10;
     },
   },
 ];

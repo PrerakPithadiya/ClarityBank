@@ -2,7 +2,7 @@
 'use client';
 
 import { BADGES } from '@/lib/badges';
-import type { BankAccount, Transaction, EarnedBadge } from '@/lib/types';
+import type { BankAccount, Transaction, EarnedBadge, User } from '@/lib/types';
 
 /**
  * A client-side function to determine which badges have been earned without writing to Firestore.
@@ -10,13 +10,14 @@ import type { BankAccount, Transaction, EarnedBadge } from '@/lib/types';
  */
 export function getEarnedBadgesFromActivity(
     transactions: Transaction[],
-    account: BankAccount
+    account: BankAccount,
+    user: User | null,
 ): EarnedBadge[] {
     const earnedBadges: EarnedBadge[] = [];
     if (!account) return [];
 
     for (const badge of BADGES) {
-        const isEarned = badge.check(transactions, account);
+        const isEarned = badge.check(transactions, account, user);
         if (isEarned) {
             earnedBadges.push({
                 id: badge.id,

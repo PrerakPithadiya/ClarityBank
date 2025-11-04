@@ -91,14 +91,27 @@ export interface Bank {
   themeColor: string;
 }
 
-export type BadgeId = 'smart-saver' | 'active-user-10' | 'consistency-king-5' | 'big-saver-10k';
+export type BadgeId = 
+  'gold-saver' |
+  'milestone-100' |
+  'zero-debt' |
+  'consistency-champ' |
+  'smart-spender' |
+  'early-bird' |
+  'night-owl' |
+  'active-user' |
+  // Legacy
+  'smart-saver' | 
+  'active-user-10' | 
+  'consistency-king-5' | 
+  'big-saver-10k';
 
 export interface BadgeDefinition {
     id: BadgeId;
     name: string;
     description: string;
     icon: LucideIcon;
-    check: (transactions: Transaction[], account: BankAccount) => boolean;
+    check: (transactions: Transaction[], account: BankAccount, user?: User | null) => boolean;
 }
 
 export interface EarnedBadge {

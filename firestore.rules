@@ -61,16 +61,11 @@ service cloud.firestore {
          Path: /users/{userId}/badges/{badgeId}
          ========================= */
       match /badges/{badgeId} {
-        function isValidBadge() {
-          return hasOnly(["id", "name", "description", "dateEarned"]) &&
-                 request.resource.data.id == badgeId &&
-                 request.resource.data.name is string &&
-                 request.resource.data.description is string &&
-                 request.resource.data.dateEarned is timestamp; // or string if you prefer ISO
-        }
-
+        // Clients can read badges that have been awarded to them.
         allow get, list: if isSignedIn() && isOwner(userId);
-        // Badges should be awarded by server-side logic (e.g., Cloud Functions), not directly by clients.
+        
+        // Awarding badges should be handled by trusted server-side logic (e.g., Cloud Functions).
+        // Clients should not be able to create, update, or delete their own badges to prevent cheating.
         allow create, update, delete: if false; 
       }
     }
@@ -81,15 +76,19 @@ service cloud.firestore {
        ========================= */
     match /users/{userId}/bankAccounts/{bankAccountId} {
       function isBankAccountValid() {
-        return hasOnly(["userId", "bankId", "bankName", "accountNumber", "balance", "createdAt", "updatedAt"]) &&
+        return hasOnly(["id", "accountNumber", "balance", "userId", "bankId", "bankName", "createdAt", "updatedAt"]) &&
+               request.resource.data.id is string &&
+               request.resource.data.accountNumber is string &&
+               request.resource.data.balance is number &&
                request.resource.data.userId == userId &&
                request.resource.data.bankId is string &&
                request.resource.data.bankName is string &&
-               request.resource.data.accountNumber is string &&
-               request.resource.data.balance is number &&
-               request.resource.data.balance >= 0 &&
                isServerTimestamp("createdAt") &&
                isServerTimestamp("updatedAt");
+      }
+      
+      function isCreateValid() {
+        return request.resource.data.balance >= 0;
       }
 
       function isBalanceValid() {
@@ -107,7 +106,7 @@ service cloud.firestore {
       }
 
       allow get, list: if isSignedIn() && (isOwner(userId) || isAdmin());
-      allow create: if isSignedIn() && isOwner(userId) && isBankAccountValid();
+      allow create: if isSignedIn() && isOwner(userId) && isBankAccountValid() && isCreateValid();
       allow update: if isSignedIn() &&
                        isOwner(userId) &&
                        isBalanceValid() &&
