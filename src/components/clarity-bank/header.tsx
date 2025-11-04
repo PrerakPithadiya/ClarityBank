@@ -11,6 +11,7 @@ import { LayoutDashboard, LogOut, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function Header() {
   const { user, isUserLoading } = useUser();
@@ -42,6 +43,7 @@ export function Header() {
         </Link>
       </div>
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         {user && !isUserLoading && (
           <>
             <nav className="hidden sm:flex items-center gap-2">
