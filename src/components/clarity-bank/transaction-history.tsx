@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo, useState, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { format, subDays, fromUnixTime, isValid } from 'date-fns';
 import { ArrowDownCircle, ArrowUpCircle, Download, FileImage, FileText, EllipsisVertical } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
