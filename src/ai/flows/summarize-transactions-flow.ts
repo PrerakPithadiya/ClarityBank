@@ -33,7 +33,8 @@ export async function summarizeTransactions(transactions: TransactionForAI[]): P
 
 const prompt = ai.definePrompt({
   name: 'summarizeTransactionsPrompt',
-  input: { schema: SummarizeTransactionsInputSchema },
+  // The prompt now expects an object with a `transactionsJson` string
+  input: { schema: z.object({ transactionsJson: z.string() }) },
   output: { schema: SummarizeTransactionsOutputSchema },
   prompt: `You are a helpful and friendly financial assistant named Clarity.
 Your goal is to provide a concise, 2-3 sentence summary of a user's recent transaction history.
@@ -51,7 +52,7 @@ Address the user directly (e.g., "You've been...").
 If there are no transactions, simply state: "Once you start making transactions, your personalized financial summary will appear here."
 
 Here is the user's recent transaction data:
-{{{jsonStringify input}}}
+{{{transactionsJson}}}
 `,
 });
 
@@ -62,7 +63,11 @@ const summarizeTransactionsFlow = ai.defineFlow(
     outputSchema: SummarizeTransactionsOutputSchema,
   },
   async (transactions) => {
-    const { output } = await prompt(transactions);
+    // Manually serialize the transaction data to a JSON string before calling the prompt.
+    const transactionsJson = JSON.stringify(transactions, null, 2);
+
+    // Pass the serialized string to the prompt.
+    const { output } = await prompt({ transactionsJson });
     return output!;
   }
 );
