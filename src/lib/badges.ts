@@ -1,9 +1,9 @@
 
 'use client';
 
-import { Award, TrendingUp, Gem, ShieldCheck, HandCoins, CalendarCheck, Clock, Milestone } from 'lucide-react';
+import { Award, TrendingUp, Gem, ShieldCheck, HandCoins, CalendarCheck, Clock, Milestone, CalendarPlus } from 'lucide-react';
 import type { BadgeDefinition, Transaction, BankAccount, User } from './types';
-import { subDays, differenceInDays, isWithinInterval } from 'date-fns';
+import { subDays, differenceInDays, isWithinInterval, getMonth, getYear } from 'date-fns';
 
 const toDate = (timestamp: any): Date | null => {
   if (!timestamp) return null;
@@ -131,4 +131,27 @@ export const BADGES: BadgeDefinition[] = [
       return transactions.length >= 10;
     },
   },
+  {
+    id: 'savings-streak',
+    name: 'Savings Streak',
+    description: 'Save consistently for 3 consecutive months.',
+    icon: CalendarPlus,
+    check: (transactions: Transaction[]) => {
+        const deposits = transactions.filter(t => t.type === 'deposit');
+        if (deposits.length === 0) return false;
+        
+        const monthsWithDeposits = new Set();
+        deposits.forEach(d => {
+            const date = toDate(d.timestamp);
+            if(date) {
+                monthsWithDeposits.add(`${getYear(date)}-${getMonth(date)}`);
+            }
+        });
+
+        const totalDeposits = transactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
+        const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((sum, t) => sum + t.amount, 0);
+
+        return monthsWithDeposits.size >= 3 && totalDeposits > totalWithdrawals;
+    }
+  }
 ];

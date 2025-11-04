@@ -100,6 +100,7 @@ export type BadgeId =
   'early-bird' |
   'night-owl' |
   'active-user' |
+  'savings-streak' |
   // Legacy
   'smart-saver' | 
   'active-user-10' | 
