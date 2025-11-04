@@ -55,6 +55,24 @@ service cloud.firestore {
       allow create: if isSignedIn() && isOwner(userId) && isValidUserProfile();
       allow update: if isSignedIn() && isOwner(userId) && isValidUserProfile();
       allow delete: if isSignedIn() && (isOwner(userId) || isAdmin());
+
+      /* =========================
+         🏅 BADGES SUBCOLLECTION
+         Path: /users/{userId}/badges/{badgeId}
+         ========================= */
+      match /badges/{badgeId} {
+        function isValidBadge() {
+          return hasOnly(["id", "name", "description", "dateEarned"]) &&
+                 request.resource.data.id == badgeId &&
+                 request.resource.data.name is string &&
+                 request.resource.data.description is string &&
+                 request.resource.data.dateEarned is timestamp; // or string if you prefer ISO
+        }
+
+        allow get, list: if isSignedIn() && isOwner(userId);
+        // Badges should be awarded by server-side logic (e.g., Cloud Functions), not directly by clients.
+        allow create, update, delete: if false; 
+      }
     }
 
     /* =========================

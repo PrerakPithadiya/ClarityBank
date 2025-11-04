@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { IndianRupee, ArrowDown, ArrowUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { SmartSummaryCard } from '@/components/clarity-bank/smart-summary-card';
+import { BadgesCard } from '@/components/clarity-bank/badges-card';
 
 
 const toDate = (timestamp: any): Date | null => {
@@ -93,6 +94,8 @@ export default function DashboardPage() {
   const COLORS = ['#16a34a', '#dc2626'];
 
   const isLoading = isUserLoading || isLoadingTransactions || isLoadingBankAccounts;
+  const primaryBankAccount = useMemo(() => (bankAccounts && bankAccounts.length > 0 ? bankAccounts[0] : null), [bankAccounts]);
+
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -104,7 +107,19 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">An overview of your financial activity.</p>
           </div>
           
-          <SmartSummaryCard transactions={transactions || []} isLoading={isLoading} />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <SmartSummaryCard transactions={transactions || []} isLoading={isLoading} />
+            </div>
+            <div>
+                <BadgesCard 
+                  transactions={transactions || []}
+                  bankAccount={primaryBankAccount}
+                  isLoading={isLoading}
+                />
+            </div>
+          </div>
+
 
           <div className="grid gap-6 md:grid-cols-3">
              <Card>

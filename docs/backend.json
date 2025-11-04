@@ -177,6 +177,32 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "Badge": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Badge",
+      "type": "object",
+      "description": "Represents a badge earned by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the badge (e.g., 'smart-saver')."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the badge."
+        },
+        "description": {
+          "type": "string",
+          "description": "A short description of what the badge is for."
+        },
+        "dateEarned": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time the badge was earned."
+        }
+      },
+      "required": ["id", "name", "description", "dateEarned"]
     }
   },
   "auth": {
@@ -246,8 +272,28 @@
             }
           ]
         }
+      },
+      {
+        "path": "/users/{userId}/badges/{badgeId}",
+        "definition": {
+          "entityName": "Badge",
+          "schema": {
+            "$ref": "#/backend/entities/Badge"
+          },
+          "description": "Stores badges earned by a user. Badges are awarded by server-side logic and are read-only for clients.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "badgeId",
+              "description": "The unique identifier for the badge."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to provide a secure and scalable banking application, ClarityBank. Prioritizing Authorization Independence, the structure avoids hierarchical `get()` calls in security rules, crucial for atomic operations and debuggability. It uses path-based ownership and explicit state modeling to maintain data clarity and integrity.\n\n1.  **Users (Private Data):** User data is stored under `/users/{userId}`, enabling path-based ownership and simplified security rules. This adheres to the principle of Private Data storage.\n\n2.  **Bank Accounts (User 1:N BankAccount):** Each user's bank accounts are stored in a subcollection `/users/{userId}/bankAccounts/{bankAccountId}`. The `userId` field within each bank account document is redundant but critical.  It denormalizes the user-account relationship, eliminating the need for `get()` calls to the `/users/{userId}` document in security rules. This is necessary to ensure Authorization Independence.  This structure uses hierarchical paths for user-owned data.\n\n3.  **Transactions (BankAccount 1:N Transaction):** Transactions are stored in a subcollection `/users/{userId}/bankAccounts/{bankAccountId}/transactions/{transactionId}`. The `bankAccountId` and `userId` are denormalized within each transaction document.  This design continues the hierarchy for nested data and maintains Authorization Independence, avoiding dependency on parent documents in security rules.\n\nThis design achieves Authorization Independence by denormalizing authorization context, specifically the `userId` in `bankAccounts` and both `bankAccountId` and `userId` in `transactions`. This eliminates the need for `get()` calls in security rules, allowing for atomic operations.\n\nTo support QAPs (Rules are not Filters), the design uses structural segregation. Each collection (`/users`, `/users/{userId}/bankAccounts`, `/users/{userId}/bankAccounts/{bankAccountId}/transactions`) has homogeneous security needs, simplifying security rules and preventing the need to filter data based on access rights. The path-based ownership model makes `list` operations secure, as rules can easily restrict access to only the data owned by the authenticated user."
+    "reasoning": "The Firestore structure is designed to provide a secure and scalable banking application, ClarityBank. Prioritizing Authorization Independence, the structure avoids hierarchical `get()` calls in security rules, crucial for atomic operations and debuggability. It uses path-based ownership and explicit state modeling to maintain data clarity and integrity.\n\n1.  **Users (Private Data):** User data is stored under `/users/{userId}`, enabling path-based ownership and simplified security rules. This adheres to the principle of Private Data storage.\n\n2.  **Bank Accounts (User 1:N BankAccount):** Each user's bank accounts are stored in a subcollection `/users/{userId}/bankAccounts/{bankAccountId}`. The `userId` field within each bank account document is redundant but critical.  It denormalizes the user-account relationship, eliminating the need for `get()` calls to the `/users/{userId}` document in security rules. This is necessary to ensure Authorization Independence.  This structure uses hierarchical paths for user-owned data.\n\n3.  **Transactions (BankAccount 1:N Transaction):** Transactions are stored in a subcollection `/users/{userId}/bankAccounts/{bankAccountId}/transactions/{transactionId}`. The `bankAccountId` and `userId` are denormalized within each transaction document.  This design continues the hierarchy for nested data and maintains Authorization Independence, avoiding dependency on parent documents in security rules.\n\n4. **Badges (User 1:N Badge):** Earned badges are stored in a subcollection `/users/{userId}/badges/{badgeId}`. This allows for easy querying of a user's earned badges. Security rules are set to be read-only for clients, as the awarding of badges should be handled by trusted server-side logic to prevent cheating.\n\nThis design achieves Authorization Independence by denormalizing authorization context, specifically the `userId` in `bankAccounts` and both `bankAccountId` and `userId` in `transactions`. This eliminates the need for `get()` calls in security rules, allowing for atomic operations.\n\nTo support QAPs (Rules are not Filters), the design uses structural segregation. Each collection (`/users`, `/users/{userId}/bankAccounts`, `/users/{userId}/bankAccounts/{bankAccountId}/transactions`) has homogeneous security needs, simplifying security rules and preventing the need to filter data based on access rights. The path-based ownership model makes `list` operations secure, as rules can easily restrict access to only the data owned by the authenticated user."
   }
 }

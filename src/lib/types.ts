@@ -90,3 +90,21 @@ export interface Bank {
   logo: string;
   themeColor: string;
 }
+
+export type BadgeId = 'smart-saver' | 'active-user-10' | 'consistency-king-5' | 'big-saver-10k';
+
+export interface BadgeDefinition {
+    id: BadgeId;
+    name: string;
+    description: string;
+    icon: LucideIcon;
+    check: (transactions: Transaction[], account: BankAccount) => boolean;
+}
+
+export interface EarnedBadge {
+    id: BadgeId;
+    name: string;
+    description: string;
+    icon: LucideIcon;
+    dateEarned: string; // ISO String
+}
