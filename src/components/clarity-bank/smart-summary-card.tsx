@@ -39,8 +39,8 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
       const preparedTransactions: TransactionForAI[] = transactions
         .map(t => {
           const date = toDate(t.timestamp);
-          if (!date) {
-            return null; // Skip transactions with invalid dates
+          if (!date || !t.category) {
+            return null; // Skip transactions with invalid dates or missing category
           }
           // Create a new, plain object with only the required fields.
           return {
