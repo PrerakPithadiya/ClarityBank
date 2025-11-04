@@ -79,12 +79,12 @@ export function BadgesCard({ transactions, bankAccount, isLoading }: BadgesCardP
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle>My Achievements</CardTitle>
         <CardDescription>Badges you've earned for your financial habits.</CardDescription>
       </CardHeader>
-      <CardContent>{renderContent()}</CardContent>
+      <CardContent className="flex-grow">{renderContent()}</CardContent>
       <CardFooter className="flex-col items-start gap-2">
          <p className="text-sm text-muted-foreground">
             You've unlocked {earnedBadges.length} out of {totalBadges} badges.

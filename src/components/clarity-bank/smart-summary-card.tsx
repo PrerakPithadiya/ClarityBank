@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -79,7 +78,7 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
   const showSkeleton = isLoading || isAiLoading;
 
   return (
-    <Card className="bg-primary/5 border-primary/20">
+    <Card className="bg-primary/5 border-primary/20 h-full flex flex-col">
       <CardHeader>
         <div className="flex items-center gap-3">
             <Lightbulb className="h-6 w-6 text-primary" />
@@ -89,7 +88,7 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
             </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow">
         {showSkeleton ? (
             <div className="space-y-2">
                 <Skeleton className="h-4 w-full" />
