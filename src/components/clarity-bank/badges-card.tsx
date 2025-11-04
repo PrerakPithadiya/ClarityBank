@@ -8,10 +8,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { BankAccount, Transaction, User } from '@/lib/types';
 import { getEarnedBadgesFromActivity } from '@/services/badge-service';
 import { BADGES } from '@/lib/badges';
-import { Trophy, Lock } from 'lucide-react';
+import { Trophy, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { useUser } from '@/firebase';
+import { Button } from '../ui/button';
+import Link from 'next/link';
 
 interface BadgesCardProps {
   transactions: Transaction[];
@@ -26,32 +28,35 @@ export function BadgesCard({ transactions, bankAccount, isLoading }: BadgesCardP
     if (!bankAccount || !user) {
       return [];
     }
-    return getEarnedBadgesFromActivity(transactions, bankAccount, user);
+    // Limit to first 4 for display on dashboard
+    return getEarnedBadgesFromActivity(transactions, bankAccount, user).slice(0, 4);
   }, [transactions, bankAccount, user]);
 
   const earnedBadgeIds = useMemo(() => new Set(earnedBadges.map(b => b.id)), [earnedBadges]);
   const totalBadges = BADGES.length;
-  const progressValue = (earnedBadges.length / totalBadges) * 100;
+  const progressValue = (getEarnedBadgesFromActivity(transactions, bankAccount, user).length / totalBadges) * 100;
 
   const renderContent = () => {
     if (isLoading) {
       return (
         <div className="grid grid-cols-4 gap-4">
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
+          <Skeleton className="h-12 w-12 rounded-lg" />
+          <Skeleton className="h-12 w-12 rounded-lg" />
+          <Skeleton className="h-12 w-12 rounded-lg" />
+          <Skeleton className="h-12 w-12 rounded-lg" />
         </div>
       );
     }
     
+    const displayBadges = BADGES.slice(0, 4);
+
     return (
       <TooltipProvider>
         <div className="grid grid-cols-4 gap-4">
-          {BADGES.map((badge) => {
+          {displayBadges.map((badge) => {
             const isEarned = earnedBadgeIds.has(badge.id);
             return (
-              <Tooltip key={badge.id}>
+              <Tooltip key={badge.id} delayDuration={0}>
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
@@ -82,14 +87,19 @@ export function BadgesCard({ transactions, bankAccount, isLoading }: BadgesCardP
     <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle>My Achievements</CardTitle>
-        <CardDescription>Badges you've earned for your financial habits.</CardDescription>
+        <CardDescription>A glimpse of your earned badges.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">{renderContent()}</CardContent>
       <CardFooter className="flex-col items-start gap-2">
          <p className="text-sm text-muted-foreground">
-            You've unlocked {earnedBadges.length} out of {totalBadges} badges.
+            You've unlocked {getEarnedBadgesFromActivity(transactions, bankAccount, user).length} out of {totalBadges} badges.
         </p>
         <Progress value={progressValue} aria-label={`${progressValue}% of badges earned`} />
+         <Button asChild variant="link" className="px-0 mt-2">
+          <Link href="/achievements">
+            View All Achievements <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
       </CardFooter>
     </Card>
   );

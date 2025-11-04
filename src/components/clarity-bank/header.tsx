@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ClarityBankLogo } from './clarity-bank-logo';
 import { Button } from '../ui/button';
-import { LayoutDashboard, LogOut, Home } from 'lucide-react';
+import { LayoutDashboard, LogOut, Home, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,6 @@ export function Header() {
   const pathname = usePathname();
 
   const handleLogout = () => {
-    // Don't await signOut. Redirect immediately for a faster user experience.
     signOut(auth);
     router.push('/login');
   };
@@ -29,6 +28,12 @@ export function Header() {
     if (!firstName || !lastName) return '';
     return `${firstName[0]}${lastName[0]}`;
   };
+
+  const navLinks = [
+    { href: '/', label: 'Home', icon: Home, active: pathname === '/' },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, active: pathname === '/dashboard' },
+    { href: '/achievements', label: 'Achievements', icon: Trophy, active: pathname === '/achievements' },
+  ];
 
   return (
     <header className="flex items-center justify-between gap-3 py-6 md:py-8">
@@ -46,22 +51,15 @@ export function Header() {
         <ThemeToggle />
         {user && !isUserLoading && (
           <>
-            <nav className="hidden sm:flex items-center gap-2">
-              {pathname === '/dashboard' ? (
-                <Button asChild variant='ghost'>
-                  <Link href="/">
-                    <Home className="mr-2 h-4 w-4" />
-                    Home
+            <nav className="hidden sm:flex items-center gap-1 rounded-full bg-muted p-1">
+              {navLinks.map(({ href, label, icon: Icon, active }) => (
+                <Button key={href} asChild variant={active ? 'default' : 'ghost'} size="sm" className="rounded-full">
+                  <Link href={href}>
+                    <Icon className="mr-2 h-4 w-4" />
+                    {label}
                   </Link>
                 </Button>
-              ) : (
-                <Button asChild variant='ghost'>
-                  <Link href="/dashboard">
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </Button>
-              )}
+              ))}
             </nav>
             <div className="flex items-center gap-3 text-right pl-2">
               <div>
