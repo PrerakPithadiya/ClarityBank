@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { format, subDays, fromUnixTime, isValid } from 'date-fns';
-import { ArrowDownCircle, ArrowUpCircle, Download, FileImage, FileText, EllipsisVertical } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, FileImage, EllipsisVertical } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,6 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
 import { getCategoryInfo } from '@/lib/transaction-categories';
 import { Button } from '@/components/ui/button';
-import jsPDF from 'jspdf';
 import { ClarityBankLogo } from './clarity-bank-logo';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import html2canvas from 'html2canvas';
@@ -74,64 +73,6 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
   const [targetTransaction, setTargetTransaction] = useState<Transaction | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
-  const handleDownloadPDF = (transaction: Transaction) => {
-    const doc = new jsPDF();
-    const date = toDate(transaction.timestamp);
-    const formattedDate = date ? format(date, 'MMM d, yyyy, h:mm a') : 'N/A';
-    const categoryLabel = getCategoryInfo(transaction.category)?.label || transaction.category || 'N/A';
-
-    doc.addFont('/fonts/Inter-Regular.ttf', 'Inter', 'normal');
-    doc.setFont('Inter');
-
-    const leftMargin = 20;
-    const rightMargin = 120;
-    const initialY = 60;
-    let y = initialY;
-    const lineSpacing = 10;
-    
-    doc.setFontSize(22);
-    doc.setFont('Inter', 'normal', 'bold');
-    doc.text('ClarityBank', 20, 30);
-    doc.setFontSize(14);
-    doc.setFont('Inter', 'normal', 'normal');
-    doc.text('Transaction Receipt', 20, 40);
-
-    doc.setFontSize(10);
-    
-    const drawRow = (label: string, value: string) => {
-        doc.setFont('Inter', 'normal', 'normal');
-        doc.text(label, leftMargin, y);
-        doc.setFont('Inter', 'normal', 'bold');
-        doc.text(value, rightMargin, y, {align: 'left'});
-        y += lineSpacing;
-    }
-
-    drawRow('Transaction ID:', transaction.id || 'N/A');
-    drawRow('Date:', formattedDate);
-    drawRow('Bank Account ID:', transaction.bankAccountId || 'N/A');
-    drawRow('Description:', transaction.description || 'N/A');
-    drawRow('Category:', categoryLabel);
-    drawRow('Type:', transaction.type || 'N/A');
-    
-    y += lineSpacing / 2;
-    doc.setLineDashPattern([1, 1], 0);
-    doc.line(leftMargin, y, 190, y);
-    y += lineSpacing * 1.5;
-
-    doc.setFontSize(12);
-    doc.setFont('Inter', 'normal', 'bold');
-    doc.text('Amount:', leftMargin, y);
-    doc.text(`${transaction.type === 'deposit' ? '+' : '-'} INR ${transaction.amount?.toFixed(2) || '0.00'}`, rightMargin, y, {align: 'left'});
-
-    const pageHeight = doc.internal.pageSize.height;
-    doc.setLineCap(2);
-    doc.line(20, pageHeight - 40, doc.internal.pageSize.width - 20, pageHeight - 40);
-    doc.setFontSize(8);
-    doc.text('Thank you for banking with ClarityBank.', 20, pageHeight - 30);
-
-    doc.save(`receipt-${transaction.id}.pdf`);
-  };
-
   const handleDownloadImage = useCallback(async (format: 'png' | 'jpeg') => {
     if (!receiptRef.current) return;
 
@@ -155,7 +96,8 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
         // This is a bit of a hack. We need to wait for the state to update and the hidden component to render.
         // A more robust solution might use a callback from the hidden component.
         setTimeout(() => {
-            handleDownloadImage('png'); // Or whichever format is default/chosen
+            // This logic is now triggered by the DropdownMenuItem's onClick directly.
+            // We keep the effect in case we need to trigger it programmatically.
         }, 100);
     }
   }, [targetTransaction, handleDownloadImage]);
@@ -288,15 +230,11 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleDownloadPDF(transaction)}>
-                              <FileText className="mr-2 h-4 w-4" />
-                              Download PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setTargetTransaction(transaction); handleDownloadImage('png') }}>
+                            <DropdownMenuItem onSelect={() => { setTargetTransaction(transaction); setTimeout(() => handleDownloadImage('png'), 0); }}>
                               <FileImage className="mr-2 h-4 w-4" />
                               Download PNG
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setTargetTransaction(transaction); handleDownloadImage('jpeg') }}>
+                            <DropdownMenuItem onSelect={() => { setTargetTransaction(transaction); setTimeout(() => handleDownloadImage('jpeg'), 0); }}>
                               <FileImage className="mr-2 h-4 w-4" />
                               Download JPG
                             </DropdownMenuItem>
