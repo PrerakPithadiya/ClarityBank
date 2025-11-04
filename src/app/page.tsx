@@ -13,10 +13,11 @@ import type { BankAccount, Transaction, TransactionCategory } from '@/lib/types'
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import banksData from '@/lib/banks.json';
+import banksData, { getBankInfo } from '@/lib/banks';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 export default function Home() {
   const router = useRouter();
@@ -114,7 +115,7 @@ export default function Home() {
 
   const handleCreateAccount = async (accountNumber: string, bankId: string) => {
     if (!user) return;
-    const selectedBank = banksData.flatMap(group => group.banks).find(b => b.id === bankId);
+    const selectedBank = getBankInfo(bankId);
     if (!selectedBank) return;
 
     const newAccountData = {
@@ -160,7 +161,7 @@ export default function Home() {
         <Header />
         <main className="grid gap-6 md:grid-cols-12">
           <div className="md:col-span-7 animate-in fade-in-0 zoom-in-95 duration-500">
-            <BalanceCard balance={bankAccount.balance} bankName={bankAccount.bankName} />
+            <BalanceCard balance={bankAccount.balance} bankId={bankAccount.bankId} bankName={bankAccount.bankName} />
           </div>
           <div className="md:col-span-5 animate-in fade-in-0 zoom-in-95 duration-500 delay-100">
             <ActionsCard
@@ -185,11 +186,17 @@ function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumbe
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bankId) {
-        alert('Please select a bank.');
+        toast({
+          title: 'Bank Not Selected',
+          description: 'Please select a bank to continue.',
+          variant: 'destructive',
+        });
         return;
     }
     onCreateAccount(accountNumber, bankId);
   };
+  
+  const { toast } = useToast();
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
@@ -215,7 +222,10 @@ function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumbe
                       <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group.category}</p>
                       {group.banks.map((bank) => (
                         <SelectItem key={bank.id} value={bank.id}>
-                          {bank.name}
+                          <div className="flex items-center gap-3">
+                            {bank.logo && <Image src={bank.logo} alt={bank.name} width={24} height={24} />}
+                            <span>{bank.name}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectGroup>

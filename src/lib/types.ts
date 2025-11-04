@@ -83,3 +83,10 @@ export interface CategoryGroup {
   label: string;
   categories: CategoryInfo[];
 }
+
+export interface Bank {
+  id: string;
+  name: string;
+  logo: string;
+  themeColor: string;
+}
