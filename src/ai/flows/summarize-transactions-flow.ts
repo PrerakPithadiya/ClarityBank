@@ -23,8 +23,9 @@ const SummarizeTransactionsOutputSchema = z.object({
 });
 
 export async function summarizeTransactions(transactions: TransactionForAI[]): Promise<z.infer<typeof SummarizeTransactionsOutputSchema>> {
+  // If there are no transactions, we can return a default message without calling the AI.
   if (!transactions || transactions.length === 0) {
-    return { summary: "There are no transactions available to analyze." };
+    return { summary: "There are no transactions available to analyze for this period." };
   }
 
   return summarizeTransactionsFlow(transactions);
@@ -46,6 +47,8 @@ Focus on:
 
 Do not just list the data. Provide a warm, encouraging, and insightful narrative.
 Address the user directly (e.g., "You've been...").
+
+If there are no transactions, simply state: "Once you start making transactions, your personalized financial summary will appear here."
 
 Here is the user's recent transaction data:
 {{{jsonStringify input}}}

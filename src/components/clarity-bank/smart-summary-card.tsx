@@ -31,6 +31,13 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
   const [isAiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
+    // If we are not loading the main data and there are no transactions,
+    // set a clear default message without calling the AI.
+    if (!isLoading && transactions.length === 0) {
+      setSummary("Once you make a few transactions, your AI-powered financial summary will appear here.");
+      return;
+    }
+    
     if (transactions && transactions.length > 0 && !isLoading) {
       setAiLoading(true);
 
@@ -39,8 +46,9 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
       const preparedTransactions: TransactionForAI[] = transactions
         .map(t => {
           const date = toDate(t.timestamp);
+          // Ensure both date and category are valid before including the transaction
           if (!date || !t.category) {
-            return null; // Skip transactions with invalid dates or missing category
+            return null; 
           }
           // Create a new, plain object with only the required fields.
           return {
@@ -61,8 +69,9 @@ export function SmartSummaryCard({ transactions, isLoading }: SmartSummaryCardPr
           })
           .finally(() => setAiLoading(false));
       } else {
+        // This case handles when transactions exist but are filtered out (e.g., invalid date/category)
         setAiLoading(false);
-        setSummary("No recent transactions to analyze.");
+        setSummary("No recent transactions available to analyze.");
       }
     }
   }, [transactions, isLoading]);
