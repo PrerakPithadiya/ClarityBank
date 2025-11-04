@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const [hasDownloadedReceipt, setHasDownloadedReceipt] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -116,6 +117,7 @@ export default function DashboardPage() {
                   transactions={transactions || []}
                   bankAccount={primaryBankAccount}
                   isLoading={isLoading}
+                  hasDownloadedReceipt={hasDownloadedReceipt}
                 />
             </div>
           </div>

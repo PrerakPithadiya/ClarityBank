@@ -19,22 +19,27 @@ interface BadgesCardProps {
   transactions: Transaction[];
   bankAccount: BankAccount | null;
   isLoading: boolean;
+  hasDownloadedReceipt?: boolean;
 }
 
-export function BadgesCard({ transactions, bankAccount, isLoading }: BadgesCardProps) {
+export function BadgesCard({ transactions, bankAccount, isLoading, hasDownloadedReceipt }: BadgesCardProps) {
   const { user } = useUser();
 
-  const earnedBadges = useMemo(() => {
+  const allEarnedBadges = useMemo(() => {
     if (!bankAccount || !user) {
       return [];
     }
-    // Limit to first 4 for display on dashboard
-    return getEarnedBadgesFromActivity(transactions, bankAccount, user).slice(0, 4);
-  }, [transactions, bankAccount, user]);
+    return getEarnedBadgesFromActivity(transactions, bankAccount, user, hasDownloadedReceipt);
+  }, [transactions, bankAccount, user, hasDownloadedReceipt]);
 
-  const earnedBadgeIds = useMemo(() => new Set(earnedBadges.map(b => b.id)), [earnedBadges]);
+
+  const earnedBadgesForDisplay = useMemo(() => {
+    return allEarnedBadges.slice(0, 4);
+  }, [allEarnedBadges]);
+
+  const earnedBadgeIds = useMemo(() => new Set(allEarnedBadges.map(b => b.id)), [allEarnedBadges]);
   const totalBadges = BADGES.length;
-  const progressValue = (getEarnedBadgesFromActivity(transactions, bankAccount, user).length / totalBadges) * 100;
+  const progressValue = (allEarnedBadges.length / totalBadges) * 100;
 
   const renderContent = () => {
     if (isLoading) {
@@ -92,7 +97,7 @@ export function BadgesCard({ transactions, bankAccount, isLoading }: BadgesCardP
       <CardContent className="flex-grow">{renderContent()}</CardContent>
       <CardFooter className="flex-col items-start gap-2">
          <p className="text-sm text-muted-foreground">
-            You've unlocked {getEarnedBadgesFromActivity(transactions, bankAccount, user).length} out of {totalBadges} badges.
+            You've unlocked {allEarnedBadges.length} out of {totalBadges} badges.
         </p>
         <Progress value={progressValue} aria-label={`${progressValue}% of badges earned`} />
          <Button asChild variant="link" className="px-0 mt-2">

@@ -101,6 +101,7 @@ export type BadgeId =
   'night-owl' |
   'active-user' |
   'savings-streak' |
+  'financial-explorer' |
   // Legacy
   'smart-saver' | 
   'active-user-10' | 
@@ -112,7 +113,7 @@ export interface BadgeDefinition {
     name: string;
     description: string;
     icon: LucideIcon;
-    check: (transactions: Transaction[], account: BankAccount, user?: User | null) => boolean;
+    check: (transactions: Transaction[], account: BankAccount, user: User | null, hasDownloadedReceipt?: boolean) => boolean;
 }
 
 export interface EarnedBadge {

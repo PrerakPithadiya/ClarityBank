@@ -26,6 +26,8 @@ export default function Home() {
   const { toast } = useToast();
 
   const [bankAccount, setBankAccount] = useState<BankAccount | null>(null);
+  const [hasDownloadedReceipt, setHasDownloadedReceipt] = useState(false);
+
 
   const bankAccountsQuery = useMemoFirebase(
     () => user ? collection(firestore, 'users', user.uid, 'bankAccounts') : null,
@@ -171,7 +173,11 @@ export default function Home() {
             />
           </div>
           <div className="col-span-12 animate-in fade-in-0 zoom-in-95 duration-500 delay-200">
-            <TransactionHistory transactions={transactions || []} isLoading={isLoadingTransactions} />
+            <TransactionHistory 
+                transactions={transactions || []} 
+                isLoading={isLoadingTransactions}
+                onReceiptDownload={() => setHasDownloadedReceipt(true)}
+            />
           </div>
         </main>
       </div>

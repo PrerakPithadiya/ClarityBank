@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Award, TrendingUp, Gem, ShieldCheck, HandCoins, CalendarCheck, Clock, Milestone, CalendarPlus } from 'lucide-react';
+import { Award, TrendingUp, Gem, ShieldCheck, HandCoins, CalendarCheck, Clock, Milestone, CalendarPlus, Search } from 'lucide-react';
 import type { BadgeDefinition, Transaction, BankAccount, User } from './types';
 import { subDays, differenceInDays, isWithinInterval, getMonth, getYear } from 'date-fns';
 
@@ -104,7 +104,7 @@ export const BADGES: BadgeDefinition[] = [
 
         if (!userCreationDate || !firstDepositDate) return false;
         
-        const oneDayAfterCreation = new Date(userCreationDate.getTime() + (24 * 60 * 60 * 1000));
+        const oneDayAfterCreation = new Date(userCreationation.getTime() + (24 * 60 * 60 * 1000));
         return isWithinInterval(firstDepositDate, { start: userCreationDate, end: oneDayAfterCreation });
     }
   },
@@ -152,6 +152,15 @@ export const BADGES: BadgeDefinition[] = [
         const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((sum, t) => sum + t.amount, 0);
 
         return monthsWithDeposits.size >= 3 && totalDeposits > totalWithdrawals;
+    }
+  },
+  {
+    id: 'financial-explorer',
+    name: 'Financial Explorer',
+    description: 'Explore the features of your dashboard by downloading a receipt.',
+    icon: Search,
+    check: (transactions: Transaction[], account: BankAccount, user: User | null, hasDownloadedReceipt: boolean) => {
+        return hasDownloadedReceipt;
     }
   }
 ];

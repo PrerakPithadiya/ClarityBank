@@ -21,6 +21,7 @@ import html2canvas from 'html2canvas';
 type TransactionHistoryProps = {
   transactions: Transaction[];
   isLoading: boolean;
+  onReceiptDownload?: () => void;
 };
 
 const toDate = (timestamp: any): Date | null => {
@@ -67,7 +68,7 @@ const PrintableReceipt = React.forwardRef<HTMLDivElement, { transaction: Transac
 PrintableReceipt.displayName = 'PrintableReceipt';
 
 
-export function TransactionHistory({ transactions, isLoading }: TransactionHistoryProps) {
+export function TransactionHistory({ transactions, isLoading, onReceiptDownload }: TransactionHistoryProps) {
   const [filterType, setFilterType] = useState<'all' | 'deposit' | 'withdrawal'>('all');
   const [filterPeriod, setFilterPeriod] = useState<'all' | '7' | '30' | '90'>('all');
   const [targetTransaction, setTargetTransaction] = useState<Transaction | null>(null);
@@ -75,6 +76,10 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
 
   const handleDownloadImage = useCallback(async (format: 'png' | 'jpeg') => {
     if (!receiptRef.current) return;
+    
+    if(onReceiptDownload) {
+      onReceiptDownload();
+    }
 
     const canvas = await html2canvas(receiptRef.current, {
         scale: 2, 
@@ -89,7 +94,7 @@ export function TransactionHistory({ transactions, isLoading }: TransactionHisto
     link.click();
     document.body.removeChild(link);
     setTargetTransaction(null); // Clean up
-  }, [targetTransaction]);
+  }, [targetTransaction, onReceiptDownload]);
 
   useEffect(() => {
     if (targetTransaction) {

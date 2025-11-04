@@ -12,12 +12,14 @@ export function getEarnedBadgesFromActivity(
     transactions: Transaction[],
     account: BankAccount,
     user: User | null,
+    hasDownloadedReceipt?: boolean
 ): EarnedBadge[] {
     const earnedBadges: EarnedBadge[] = [];
     if (!account) return [];
 
     for (const badge of BADGES) {
-        const isEarned = badge.check(transactions, account, user);
+        // Pass the optional hasDownloadedReceipt flag to the check function
+        const isEarned = badge.check(transactions, account, user, hasDownloadedReceipt);
         if (isEarned) {
             earnedBadges.push({
                 id: badge.id,
