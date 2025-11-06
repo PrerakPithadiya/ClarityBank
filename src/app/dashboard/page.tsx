@@ -8,7 +8,7 @@ import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { Header } from '@/components/clarity-bank/header';
 import type { BankAccount, Transaction } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, Sector } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IndianRupee, ArrowDown, ArrowUp } from 'lucide-react';
 import { format, subDays } from 'date-fns';
@@ -74,9 +74,15 @@ export default function DashboardPage() {
   }, [allTransactions, filterPeriod]);
 
 
-  const { monthlyData, depositWithdrawalData, totalDeposits, totalWithdrawals, totalTransactions } = useMemo(() => {
+  const { 
+    monthlyData, 
+    categoryData, 
+    totalDeposits, 
+    totalWithdrawals, 
+    totalTransactions 
+  } = useMemo(() => {
     if (!transactions) {
-      return { monthlyData: [], depositWithdrawalData: [], totalDeposits: 0, totalWithdrawals: 0, totalTransactions: 0 };
+      return { monthlyData: [], categoryData: [], totalDeposits: 0, totalWithdrawals: 0, totalTransactions: 0 };
     }
     
     const monthlySummary = transactions.reduce((acc, t) => {
@@ -100,15 +106,37 @@ export default function DashboardPage() {
     const totalDeposits = transactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
     const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((sum, t) => sum + t.amount, 0);
 
-    const depositWithdrawalData = [
-      { name: 'Deposits', value: totalDeposits },
-      { name: 'Withdrawals', value: totalWithdrawals },
-    ];
+    const categorySummary = transactions
+        .filter(t => t.type === 'withdrawal')
+        .reduce((acc, t) => {
+            const category = t.category || 'Other';
+            if (!acc[category]) {
+                acc[category] = 0;
+            }
+            acc[category] += t.amount;
+            return acc;
+        }, {} as Record<string, number>);
+
+    const categoryData = Object.entries(categorySummary)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
+
     
-    return { monthlyData, depositWithdrawalData, totalDeposits, totalWithdrawals, totalTransactions: transactions.length };
+    return { monthlyData, categoryData, totalDeposits, totalWithdrawals, totalTransactions: transactions.length };
   }, [transactions]);
   
-  const COLORS = ['#16a34a', '#dc2626'];
+  const PIE_CHART_COLORS = [
+    'hsl(var(--chart-1))', 
+    'hsl(var(--chart-2))', 
+    'hsl(var(--chart-3))', 
+    'hsl(var(--chart-4))', 
+    'hsl(var(--chart-5))',
+    '#16a34a',
+    '#dc2626',
+    '#f59e0b',
+    '#3b82f6',
+    '#8b5cf6'
+  ];
 
   const isLoading = isUserLoading || isLoadingTransactions || isLoadingBankAccounts;
   const primaryBankAccount = useMemo(() => (bankAccounts && bankAccounts.length > 0 ? bankAccounts[0] : null), [bankAccounts]);
@@ -204,31 +232,45 @@ export default function DashboardPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Deposit vs. Withdrawal</CardTitle>
-                            <CardDescription>A breakdown of your total funds movement.</CardDescription>
+                            <CardTitle>Top Spending Categories</CardTitle>
+                            <CardDescription>A breakdown of your withdrawals by category.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {isLoading ? <Skeleton className="h-[300px] w-full" /> : (
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                <Pie
-                                    data={depositWithdrawalData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    outerRadius={100}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                >
-                                    {depositWithdrawalData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}/>
-                                <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
+                                categoryData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={categoryData}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            outerRadius={100}
+                                            innerRadius={60}
+                                            paddingAngle={2}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                        >
+                                            {categoryData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                          formatter={(value: number, name: string, props) => {
+                                            const total = categoryData.reduce((sum, item) => sum + item.value, 0);
+                                            const percent = (value / total * 100).toFixed(2);
+                                            return [`₹${value.toLocaleString('en-IN')} (${percent}%)`, name];
+                                          }}
+                                        />
+                                        <Legend iconSize={10} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                ) : (
+                                <div className="flex h-[300px] w-full items-center justify-center">
+                                    <p className="text-muted-foreground">No withdrawal data for this period.</p>
+                                </div>
+                                )
                             )}
                         </CardContent>
                     </Card>
@@ -241,3 +283,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
