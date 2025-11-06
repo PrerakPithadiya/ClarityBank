@@ -134,12 +134,7 @@ export default function DashboardPage() {
     'hsl(var(--chart-2))', 
     'hsl(var(--chart-3))', 
     'hsl(var(--chart-4))', 
-    'hsl(var(--chart-5))',
-    '#16a34a',
-    '#dc2626',
-    '#f59e0b',
-    '#3b82f6',
-    '#8b5cf6'
+    'hsl(var(--chart-5))'
   ];
 
   const isLoading = isUserLoading || isLoadingTransactions || isLoadingBankAccounts;
@@ -219,15 +214,19 @@ export default function DashboardPage() {
                             {isLoading ? <Skeleton className="h-[300px] w-full" /> : (
                             <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={monthlyData}>
-                                <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
+                                <XAxis dataKey="month" stroke="hsl(var(--foreground))" opacity={0.8} fontSize={12} tickLine={false} axisLine={false}/>
+                                <YAxis stroke="hsl(var(--foreground))" opacity={0.8} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
                                 <Tooltip 
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--background))',
+                                        borderColor: 'hsl(var(--border))'
+                                    }}
                                     formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
                                     cursor={{fill: 'hsl(var(--muted))'}}
                                 />
                                 <Legend />
-                                <Bar dataKey="deposits" fill="hsl(var(--primary))" name="Deposits" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="withdrawals" fill="hsl(var(--destructive))" name="Withdrawals" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="deposits" fill="hsl(var(--chart-1))" name="Deposits" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="withdrawals" fill="hsl(var(--chart-2))" name="Withdrawals" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                             )}
@@ -261,6 +260,10 @@ export default function DashboardPage() {
                                             ))}
                                         </Pie>
                                         <Tooltip 
+                                          contentStyle={{
+                                            backgroundColor: 'hsl(var(--background))',
+                                            borderColor: 'hsl(var(--border))'
+                                          }}
                                           formatter={(value: number, name: string) => {
                                             const total = categoryData.reduce((sum, item) => sum + item.value, 0);
                                             const percent = (value / total * 100).toFixed(2);
