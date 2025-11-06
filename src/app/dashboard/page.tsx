@@ -15,6 +15,7 @@ import { format, subDays } from 'date-fns';
 import { SmartSummaryCard } from '@/components/clarity-bank/smart-summary-card';
 import { BadgesCard } from '@/components/clarity-bank/badges-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTheme } from 'next-themes';
 
 
 const toDate = (timestamp: any): Date | null => {
@@ -26,6 +27,31 @@ const toDate = (timestamp: any): Date | null => {
   return d;
 };
 
+const chartColors = {
+  dark: {
+    deposits: "#4F9DFF",
+    withdrawals: "#FF5C5C",
+    bills: "#22C55E",
+    food: "#FACC15",
+    other: "#8B5CF6",
+    text: "#E2E8F0",
+    background: "#0F172A",
+    card: "#1E293B",
+    grid: "#334155",
+  },
+  light: {
+    deposits: "#2563EB",
+    withdrawals: "#DC2626",
+    bills: "#16A34A",
+    food: "#CA8A04",
+    other: "#7C3AED",
+    text: "#0F172A",
+    background: "#F8FAFC",
+    card: "#FFFFFF",
+    grid: "#CBD5E1",
+  },
+};
+
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -33,6 +59,19 @@ export default function DashboardPage() {
   const router = useRouter();
   const [hasDownloadedReceipt, setHasDownloadedReceipt] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState<'30' | '90' | 'all'>('30');
+  const { theme } = useTheme();
+  const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('light');
+
+  useEffect(() => {
+    // The theme from useTheme can be 'system'. We resolve it to 'dark' or 'light'.
+    // We also handle the case where theme is undefined on initial render.
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      setCurrentTheme(systemTheme);
+    } else if (theme) {
+      setCurrentTheme(theme as 'dark' | 'light');
+    }
+  }, [theme]);
 
 
   useEffect(() => {
@@ -129,12 +168,13 @@ export default function DashboardPage() {
     return { netWorth, monthlyData, categoryData, totalDeposits, totalWithdrawals, totalTransactions: transactions.length };
   }, [transactions, bankAccounts]);
   
-  const PIE_CHART_COLORS = [
-    'hsl(var(--chart-1))', 
-    'hsl(var(--chart-2))', 
-    'hsl(var(--chart-3))', 
-    'hsl(var(--chart-4))', 
-    'hsl(var(--chart-5))'
+  const colors = chartColors[currentTheme];
+  const pieColors = [
+    colors.bills,
+    colors.food,
+    colors.other,
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))',
   ];
 
   const isLoading = isUserLoading || isLoadingTransactions || isLoadingBankAccounts;
@@ -213,20 +253,22 @@ export default function DashboardPage() {
                         <CardContent>
                             {isLoading ? <Skeleton className="h-[300px] w-full" /> : (
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={monthlyData}>
-                                <XAxis dataKey="month" stroke="hsl(var(--foreground))" opacity={0.8} fontSize={12} tickLine={false} axisLine={false}/>
-                                <YAxis stroke="hsl(var(--foreground))" opacity={0.8} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
+                                <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <XAxis dataKey="month" stroke={colors.text} opacity={0.8} fontSize={12} tickLine={false} axisLine={false}/>
+                                <YAxis stroke={colors.text} opacity={0.8} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
                                 <Tooltip 
                                     contentStyle={{
-                                        backgroundColor: 'hsl(var(--background))',
-                                        borderColor: 'hsl(var(--border))'
+                                        backgroundColor: colors.card,
+                                        borderColor: colors.grid,
+                                        color: colors.text,
                                     }}
+                                    labelStyle={{ color: colors.text }}
                                     formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
                                     cursor={{fill: 'hsl(var(--muted))'}}
                                 />
-                                <Legend />
-                                <Bar dataKey="deposits" fill="hsl(var(--chart-1))" name="Deposits" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="withdrawals" fill="hsl(var(--chart-2))" name="Withdrawals" radius={[4, 4, 0, 0]} />
+                                <Legend wrapperStyle={{ color: colors.text }} />
+                                <Bar dataKey="deposits" fill={colors.deposits} name="Deposits" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="withdrawals" fill={colors.withdrawals} name="Withdrawals" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                             )}
@@ -254,23 +296,26 @@ export default function DashboardPage() {
                                             fill="#8884d8"
                                             dataKey="value"
                                             label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                            stroke={colors.background}
                                         >
                                             {categoryData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                                              <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
                                             ))}
                                         </Pie>
                                         <Tooltip 
                                           contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            borderColor: 'hsl(var(--border))'
+                                            backgroundColor: colors.card,
+                                            borderColor: colors.grid,
+                                            color: colors.text,
                                           }}
+                                          labelStyle={{ color: colors.text }}
                                           formatter={(value: number, name: string) => {
                                             const total = categoryData.reduce((sum, item) => sum + item.value, 0);
                                             const percent = (value / total * 100).toFixed(2);
                                             return [`₹${value.toLocaleString('en-IN')} (${percent}%)`, name];
                                           }}
                                         />
-                                        <Legend iconSize={10} />
+                                        <Legend wrapperStyle={{ color: colors.text }} iconSize={10} />
                                     </PieChart>
                                 </ResponsiveContainer>
                                 ) : (
@@ -290,5 +335,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
