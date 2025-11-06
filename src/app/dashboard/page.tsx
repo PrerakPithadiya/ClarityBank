@@ -261,8 +261,10 @@ export default function DashboardPage() {
                                         backgroundColor: colors.card,
                                         borderColor: colors.grid,
                                         color: colors.text,
+                                        borderRadius: "8px",
+                                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                                     }}
-                                    labelStyle={{ color: colors.text }}
+                                    labelStyle={{ color: colors.text, fontWeight: 500 }}
                                     formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
                                     cursor={{fill: 'hsl(var(--muted))'}}
                                 />
@@ -307,8 +309,10 @@ export default function DashboardPage() {
                                             backgroundColor: colors.card,
                                             borderColor: colors.grid,
                                             color: colors.text,
+                                            borderRadius: "8px",
+                                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                                           }}
-                                          labelStyle={{ color: colors.text }}
+                                          labelStyle={{ color: colors.text, fontWeight: 500 }}
                                           formatter={(value: number, name: string) => {
                                             const total = categoryData.reduce((sum, item) => sum + item.value, 0);
                                             const percent = (value / total * 100).toFixed(2);
@@ -335,6 +339,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     
 
