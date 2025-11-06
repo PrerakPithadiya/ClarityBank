@@ -246,10 +246,20 @@ function CreateAccountFlow({ onCreateAccount }: { onCreateAccount: (accountNumbe
             <Input
               id="accountNumber"
               type="text"
+              inputMode="numeric"
               value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
+              onChange={(e) => {
+                const numericValue = e.target.value.replace(/[^0-9]/g, '');
+                if (numericValue.length <= 16) {
+                    setAccountNumber(numericValue);
+                }
+              }}
               placeholder="e.g., 123456789"
               required
+              minLength={5}
+              maxLength={16}
+              pattern="[0-9]{5,16}"
+              title="Account number must be between 5 and 16 digits."
             />
           </div>
           <Button
