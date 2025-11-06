@@ -8,9 +8,9 @@ import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { Header } from '@/components/clarity-bank/header';
 import type { BankAccount, Transaction } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, Sector } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { IndianRupee, ArrowDown, ArrowUp } from 'lucide-react';
+import { IndianRupee, ArrowDown, ArrowUp, Wallet } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { SmartSummaryCard } from '@/components/clarity-bank/smart-summary-card';
 import { BadgesCard } from '@/components/clarity-bank/badges-card';
@@ -79,12 +79,16 @@ export default function DashboardPage() {
     categoryData, 
     totalDeposits, 
     totalWithdrawals, 
-    totalTransactions 
+    totalTransactions,
+    netWorth
   } = useMemo(() => {
+    const defaultData = { monthlyData: [], categoryData: [], totalDeposits: 0, totalWithdrawals: 0, totalTransactions: 0, netWorth: 0 };
     if (!transactions) {
-      return { monthlyData: [], categoryData: [], totalDeposits: 0, totalWithdrawals: 0, totalTransactions: 0 };
+      return defaultData;
     }
     
+    const netWorth = bankAccounts?.reduce((sum, acc) => sum + acc.balance, 0) || 0;
+
     const monthlySummary = transactions.reduce((acc, t) => {
       const date = toDate(t.timestamp);
       if(!date) return acc;
@@ -122,8 +126,8 @@ export default function DashboardPage() {
         .sort((a, b) => b.value - a.value);
 
     
-    return { monthlyData, categoryData, totalDeposits, totalWithdrawals, totalTransactions: transactions.length };
-  }, [transactions]);
+    return { netWorth, monthlyData, categoryData, totalDeposits, totalWithdrawals, totalTransactions: transactions.length };
+  }, [transactions, bankAccounts]);
   
   const PIE_CHART_COLORS = [
     'hsl(var(--chart-1))', 
@@ -178,6 +182,15 @@ export default function DashboardPage() {
                 <div className="grid gap-6 md:grid-cols-3">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Net Worth</CardTitle>
+                            <Wallet className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{netWorth.toLocaleString('en-IN')}</div>}
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
                             <ArrowUp className="h-4 w-4 text-green-500" />
                         </CardHeader>
@@ -192,15 +205,6 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent>
                             {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{totalWithdrawals.toLocaleString('en-IN')}</div>}
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-                            <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{totalTransactions}</div>}
                         </CardContent>
                     </Card>
                 </div>
@@ -257,7 +261,7 @@ export default function DashboardPage() {
                                             ))}
                                         </Pie>
                                         <Tooltip 
-                                          formatter={(value: number, name: string, props) => {
+                                          formatter={(value: number, name: string) => {
                                             const total = categoryData.reduce((sum, item) => sum + item.value, 0);
                                             const percent = (value / total * 100).toFixed(2);
                                             return [`₹${value.toLocaleString('en-IN')} (${percent}%)`, name];
