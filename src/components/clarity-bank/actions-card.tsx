@@ -16,6 +16,7 @@ import React from "react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { TransactionCategory } from "@/lib/types";
 import { TRANSACTION_CATEGORIES, ALL_CATEGORIES } from "@/lib/transaction-categories";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 type ActionsCardProps = {
@@ -156,7 +157,25 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
                 />
                 <DialogFooter>
                   <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
-                  <Button type="submit">Deposit</Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" disabled={!depositForm.formState.isValid}>Deposit</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deposit</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to deposit ₹{depositForm.getValues('amount') || '0.00'}?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => depositForm.handleSubmit(handleDepositSubmit)()}>
+                          Confirm
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </DialogFooter>
               </form>
             </Form>
@@ -228,7 +247,27 @@ export function ActionsCard({ balance, onDeposit, onWithdraw }: ActionsCardProps
                 />
                 <DialogFooter>
                   <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
-                  <Button type="submit" variant="destructive">Withdraw</Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" variant="destructive" disabled={!withdrawForm.formState.isValid}>Withdraw</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Withdrawal</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to withdraw ₹{withdrawForm.getValues('amount') || '0.00'}?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => withdrawForm.handleSubmit(handleWithdrawSubmit)()}>
+                          Confirm
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </DialogFooter>
               </form>
             </Form>
