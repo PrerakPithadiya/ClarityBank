@@ -11,9 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IndianRupee, ArrowDown, ArrowUp } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { SmartSummaryCard } from '@/components/clarity-bank/smart-summary-card';
 import { BadgesCard } from '@/components/clarity-bank/badges-card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const toDate = (timestamp: any): Date | null => {
@@ -31,6 +32,8 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const [hasDownloadedReceipt, setHasDownloadedReceipt] = useState(false);
+  const [filterPeriod, setFilterPeriod] = useState<'30' | '90' | 'all'>('30');
+
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -44,19 +47,32 @@ export default function DashboardPage() {
   );
   const { data: bankAccounts, isLoading: isLoadingBankAccounts } = useCollection<BankAccount>(bankAccountsQuery);
   
-  // This is a simplified approach. For the AI summary, we will just fetch the last 100 transactions
-  // from the first bank account to avoid overwhelming the model and keep things fast.
   const transactionsQuery = useMemoFirebase(
     () => (user && bankAccounts && bankAccounts.length > 0) 
             ? query(
                 collection(firestore, 'users', user.uid, 'bankAccounts', bankAccounts[0].id, 'transactions'),
                 orderBy('timestamp', 'desc'),
-                limit(100)
+                limit(500) // Fetch a larger number for better filtering
               ) 
             : null,
     [firestore, user, bankAccounts]
   );
-  const { data: transactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
+  const { data: allTransactions, isLoading: isLoadingTransactions } = useCollection<Transaction>(transactionsQuery);
+
+  const transactions = useMemo(() => {
+    if (!allTransactions) return [];
+    if (filterPeriod === 'all') return allTransactions;
+
+    const days = parseInt(filterPeriod);
+    const cutoffDate = subDays(new Date(), days);
+    
+    return allTransactions.filter(t => {
+        const transactionDate = toDate(t.timestamp);
+        return transactionDate && transactionDate >= cutoffDate;
+    });
+
+  }, [allTransactions, filterPeriod]);
+
 
   const { monthlyData, depositWithdrawalData, totalDeposits, totalWithdrawals, totalTransactions } = useMemo(() => {
     if (!transactions) {
@@ -110,105 +126,116 @@ export default function DashboardPage() {
           
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <SmartSummaryCard transactions={transactions || []} isLoading={isLoading} />
+                <SmartSummaryCard transactions={transactions || []} isLoading={isLoading} />
             </div>
             <div>
                 <BadgesCard 
-                  transactions={transactions || []}
+                  transactions={allTransactions || []} // Pass all transactions for accurate badge calculation
                   bankAccount={primaryBankAccount}
                   isLoading={isLoading}
                   hasDownloadedReceipt={hasDownloadedReceipt}
                 />
             </div>
           </div>
-
-
-          <div className="grid gap-6 md:grid-cols-3">
-             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
-                <ArrowUp className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{totalDeposits.toLocaleString('en-IN')}</div>}
-              </CardContent>
-            </Card>
-             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Withdrawals</CardTitle>
-                <ArrowDown className="h-4 w-4 text-red-500" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{totalWithdrawals.toLocaleString('en-IN')}</div>}
-              </CardContent>
-            </Card>
-             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-                <IndianRupee className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{totalTransactions}</div>}
-              </CardContent>
-            </Card>
-          </div>
           
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Activity</CardTitle>
-                <CardDescription>Deposits and withdrawals over the last few months.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? <Skeleton className="h-[300px] w-full" /> : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={monthlyData}>
-                      <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                      <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
-                      <Tooltip 
-                        formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
-                        cursor={{fill: 'hsl(var(--muted))'}}
-                      />
-                      <Legend />
-                      <Bar dataKey="deposits" fill="hsl(var(--primary))" name="Deposits" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="withdrawals" fill="hsl(var(--destructive))" name="Withdrawals" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
+          <Tabs value={filterPeriod} onValueChange={(value) => setFilterPeriod(value as any)}>
+            <div className="flex items-center justify-between">
+                <TabsList>
+                  <TabsTrigger value="30">Last 30 Days</TabsTrigger>
+                  <TabsTrigger value="90">Last 90 Days</TabsTrigger>
+                  <TabsTrigger value="all">All Time</TabsTrigger>
+                </TabsList>
+            </div>
+            <TabsContent value={filterPeriod} className="mt-4">
+                <div className="grid gap-6 md:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
+                            <ArrowUp className="h-4 w-4 text-green-500" />
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{totalDeposits.toLocaleString('en-IN')}</div>}
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Withdrawals</CardTitle>
+                            <ArrowDown className="h-4 w-4 text-red-500" />
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">₹{totalWithdrawals.toLocaleString('en-IN')}</div>}
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+                            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{totalTransactions}</div>}
+                        </CardContent>
+                    </Card>
+                </div>
+                
+                <div className="grid gap-6 md:grid-cols-2 mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Monthly Activity</CardTitle>
+                            <CardDescription>Deposits and withdrawals over the selected period.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-[300px] w-full" /> : (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={monthlyData}>
+                                <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value/1000}k`} />
+                                <Tooltip 
+                                    formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
+                                    cursor={{fill: 'hsl(var(--muted))'}}
+                                />
+                                <Legend />
+                                <Bar dataKey="deposits" fill="hsl(var(--primary))" name="Deposits" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="withdrawals" fill="hsl(var(--destructive))" name="Withdrawals" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                            )}
+                        </CardContent>
+                    </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Deposit vs. Withdrawal</CardTitle>
-                <CardDescription>A breakdown of your total funds movement.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                 {isLoading ? <Skeleton className="h-[300px] w-full" /> : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={depositWithdrawalData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {depositWithdrawalData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}/>
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Deposit vs. Withdrawal</CardTitle>
+                            <CardDescription>A breakdown of your total funds movement.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <Skeleton className="h-[300px] w-full" /> : (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                <Pie
+                                    data={depositWithdrawalData}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    outerRadius={100}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                >
+                                    {depositWithdrawalData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}/>
+                                <Legend />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </TabsContent>
+          </Tabs>
+
         </main>
       </div>
     </div>
