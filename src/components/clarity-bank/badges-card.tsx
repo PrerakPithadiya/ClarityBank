@@ -34,8 +34,8 @@ export function BadgesCard({ transactions, bankAccount, user, isLoading, hasDown
     const appUser: AppUser = {
       id: user.uid,
       email: user.email || '',
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
+      firstName: user.displayName?.split(' ')[0] || '',
+      lastName: user.displayName?.split(' ')[1] || '',
       createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime).toISOString() : new Date().toISOString(),
       updatedAt: user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toISOString() : new Date().toISOString(),
     };
