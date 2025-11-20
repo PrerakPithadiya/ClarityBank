@@ -5,31 +5,42 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { BankAccount, Transaction, User } from '@/lib/types';
+import type { BankAccount, Transaction, User as AppUser } from '@/lib/types';
 import { getEarnedBadgesFromActivity } from '@/services/badge-service';
 import { BADGES } from '@/lib/badges';
 import { Trophy, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
-import { useUser } from '@/firebase';
+import { type User as FirebaseUser } from 'firebase/auth';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 
 interface BadgesCardProps {
   transactions: Transaction[];
   bankAccount: BankAccount | null;
+  user: FirebaseUser | null;
   isLoading: boolean;
   hasDownloadedReceipt?: boolean;
 }
 
-export function BadgesCard({ transactions, bankAccount, isLoading, hasDownloadedReceipt }: BadgesCardProps) {
-  const { user } = useUser();
+export function BadgesCard({ transactions, bankAccount, user, isLoading, hasDownloadedReceipt }: BadgesCardProps) {
 
   const allEarnedBadges = useMemo(() => {
     if (!bankAccount || !user) {
       return [];
     }
-    return getEarnedBadgesFromActivity(transactions, bankAccount, user, hasDownloadedReceipt);
+    
+    // Map the Firebase Auth user to the app's User type
+    const appUser: AppUser = {
+      id: user.uid,
+      email: user.email || '',
+      firstName: user.displayName?.split(' ')[0] || '',
+      lastName: user.displayName?.split(' ')[1] || '',
+      createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime).toISOString() : new Date().toISOString(),
+      updatedAt: user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toISOString() : new Date().toISOString(),
+    };
+
+    return getEarnedBadgesFromActivity(transactions, bankAccount, appUser, hasDownloadedReceipt);
   }, [transactions, bankAccount, user, hasDownloadedReceipt]);
 
 

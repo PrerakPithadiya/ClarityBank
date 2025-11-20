@@ -159,8 +159,8 @@ export const BADGES: BadgeDefinition[] = [
     name: 'Financial Explorer',
     description: 'Explore the features of your dashboard by downloading a receipt.',
     icon: Search,
-    check: (transactions: Transaction[], account: BankAccount, user: User | null, hasDownloadedReceipt: boolean) => {
-        return hasDownloadedReceipt;
+    check: (transactions: Transaction[], account: BankAccount, user: User | null, hasDownloadedReceipt?: boolean) => {
+        return !!hasDownloadedReceipt;
     }
   }
 ];

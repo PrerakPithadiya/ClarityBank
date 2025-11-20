@@ -199,6 +199,7 @@ export default function DashboardPage() {
                 <BadgesCard 
                   transactions={allTransactions || []} // Pass all transactions for accurate badge calculation
                   bankAccount={primaryBankAccount}
+                  user={user}
                   isLoading={isLoading}
                   hasDownloadedReceipt={hasDownloadedReceipt}
                 />
@@ -339,9 +340,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    

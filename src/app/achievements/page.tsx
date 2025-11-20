@@ -56,8 +56,8 @@ export default function AchievementsPage() {
     const appUser: User = {
       id: user.uid,
       email: user.email || '',
-      firstName: user.displayName?.split(' ')[0] || '',
-      lastName: user.displayName?.split(' ')[1] || '',
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime).toISOString() : new Date().toISOString(),
       updatedAt: user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toISOString() : new Date().toISOString(),
     };
@@ -121,8 +121,8 @@ export default function AchievementsPage() {
                   const isEarned = earnedBadgeIds.has(badge.id);
                   return (
                     <Tooltip key={badge.id}>
+                      <TooltipTrigger asChild>
                         <Card 
-                          key={badge.id} 
                           className={cn(
                             'flex flex-col items-center justify-start text-center p-4 transition-all duration-300',
                             isEarned 
@@ -152,6 +152,11 @@ export default function AchievementsPage() {
                                 </div>
                             )}
                         </Card>
+                      </TooltipTrigger>
+                       <TooltipContent>
+                          <p className="font-bold">{badge.name}</p>
+                          <p>{badge.description}</p>
+                        </TooltipContent>
                     </Tooltip>
                   );
                 })}
