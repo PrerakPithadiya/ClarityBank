@@ -51,7 +51,18 @@ export default function AchievementsPage() {
     if (!primaryBankAccount || !user || !transactions) {
       return { earnedBadges: [], earnedBadgeIds: new Set() };
     }
-    const earned = getEarnedBadgesFromActivity(transactions, primaryBankAccount, user);
+
+    // Map the Firebase Auth user to the app's User type
+    const appUser: User = {
+      id: user.uid,
+      email: user.email || '',
+      firstName: user.displayName?.split(' ')[0] || '',
+      lastName: user.displayName?.split(' ')[1] || '',
+      createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime).toISOString() : new Date().toISOString(),
+      updatedAt: user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toISOString() : new Date().toISOString(),
+    };
+
+    const earned = getEarnedBadgesFromActivity(transactions, primaryBankAccount, appUser);
     const earnedIds = new Set(earned.map(b => b.id));
     return { earnedBadges: earned, earnedBadgeIds: earnedIds };
   }, [transactions, primaryBankAccount, user]);

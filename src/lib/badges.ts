@@ -104,7 +104,7 @@ export const BADGES: BadgeDefinition[] = [
 
         if (!userCreationDate || !firstDepositDate) return false;
         
-        const oneDayAfterCreation = new Date(userCreationation.getTime() + (24 * 60 * 60 * 1000));
+        const oneDayAfterCreation = new Date(userCreationDate.getTime() + (24 * 60 * 60 * 1000));
         return isWithinInterval(firstDepositDate, { start: userCreationDate, end: oneDayAfterCreation });
     }
   },
